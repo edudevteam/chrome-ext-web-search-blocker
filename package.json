@@ -1,0 +1,34 @@
+{
+  "name": "web-content-blocker",
+  "private": true,
+  "version": "1.0.16",
+  "type": "module",
+  "description": "MV3 extension that blocks search results by keyword or site across every search type.",
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "icons": "node scripts/generate-icons.mjs",
+    "bump": "node scripts/bump-version.mjs --if-changed",
+    "bump:force": "node scripts/bump-version.mjs",
+    "build": "pnpm bump && pnpm clean && pnpm icons && vite build && vite build --config vite.content.config.ts",
+    "build:noversion": "pnpm clean && pnpm icons && vite build && vite build --config vite.content.config.ts",
+    "watch": "pnpm icons && (vite build --watch & vite build --config vite.content.config.ts --watch & wait)",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.0",
+    "@types/node": "^26.4.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.0",
+    "vitest": "^4.1.11"
+  }
+}

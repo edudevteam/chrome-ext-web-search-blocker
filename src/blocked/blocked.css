@@ -1,0 +1,101 @@
+/*
+ * Base styling for the landing page. Custom markup inherits the page ground and
+ * type but is otherwise free — the `.wcb-` classes below are only what the
+ * built-in template uses.
+ */
+
+:root {
+  --ink: #1c1a17;
+  --ink-soft: #6b6459;
+  --ground: #faf7f2;
+  --rule: #e4ddd1;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #ece7df;
+    --ink-soft: #98918a;
+    --ground: #14130f;
+    --rule: #2c2924;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 16px/1.6 ui-serif, Georgia, "Times New Roman", serif;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+#root {
+  width: 100%;
+  max-width: 680px;
+}
+
+.wcb-landing {
+  text-align: center;
+}
+
+.wcb-eyebrow {
+  margin: 0 0 28px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.wcb-eyebrow::after {
+  content: "";
+  display: block;
+  width: 32px;
+  height: 1px;
+  margin: 14px auto 0;
+  background: var(--rule);
+}
+
+#wcb-quote {
+  margin: 0;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+
+#wcb-quote.is-visible {
+  opacity: 1;
+}
+
+.wcb-quote__text {
+  margin: 0 0 18px;
+  font-size: clamp(20px, 3.4vw, 30px);
+  line-height: 1.45;
+  text-wrap: balance;
+}
+
+.wcb-quote__ref {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #wcb-quote {
+    transition: none;
+  }
+}

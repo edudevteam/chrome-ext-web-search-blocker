@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && node scripts/bump-version.mjs --if-changed --hook 2>/dev/null || true",
+            "statusMessage": "Bumping extension version",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
