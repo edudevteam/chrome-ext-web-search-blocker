@@ -1,7 +1,7 @@
 {
   "name": "web-content-blocker",
   "private": true,
-  "version": "1.0.16",
+  "version": "1.1.1",
   "type": "module",
   "description": "MV3 extension that blocks search results by keyword or site across every search type.",
   "scripts": {
@@ -11,6 +11,7 @@
     "bump:force": "node scripts/bump-version.mjs",
     "build": "pnpm bump && pnpm clean && pnpm icons && vite build && vite build --config vite.content.config.ts",
     "build:noversion": "pnpm clean && pnpm icons && vite build && vite build --config vite.content.config.ts",
+    "zip": "pnpm build && node scripts/pack.mjs",
     "watch": "pnpm icons && (vite build --watch & vite build --config vite.content.config.ts --watch & wait)",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

@@ -65,6 +65,36 @@ pnpm test           # matching + result-detection unit tests (vitest/jsdom)
 pnpm typecheck
 ```
 
+## Packaging for the Chrome Web Store
+
+```bash
+pnpm zip            # -> release/web-content-blocker-1.0.17.zip
+```
+
+[`scripts/pack.mjs`](scripts/pack.mjs) builds first, then archives the **contents** of
+`dist/` — `manifest.json` has to sit at the root of the zip, and an archive holding
+`dist/manifest.json` is rejected on upload. It excludes `.DS_Store` and any `.map`
+file, deletes an existing archive of the same name rather than letting `zip` add to
+it, and checks the layout with `unzip -l` before reporting the path.
+
+The script is named `zip` rather than `pack` because `pnpm pack` is pnpm's own command
+for building an npm tarball, and a built-in wins over a same-named script.
+
+Because `pnpm build` bumps the version, the number in the filename always matches the
+manifest inside. The Store refuses a re-upload at a version it already has, so each
+submission needs a fresh build anyway. Running `node scripts/pack.mjs` directly skips
+the build and fails if `dist/` has drifted from `package.json`.
+
+Review will ask you to justify `<all_urls>`; the answer is in
+[*The permission this needs*](#the-permission-this-needs) below — it is for the service
+worker's `webNavigation` listener, not for injecting scripts. Publishing **Unlisted**
+gets you an install link without the discovery-surface scrutiny of a public listing,
+and can be flipped public later.
+
+`chrome://extensions` → *Pack extension* produces a `.crx` instead, but Chrome has
+blocked installing those from outside the Web Store on Windows and macOS for years.
+For local use, **Load unpacked** on `dist/` is the better path.
+
 ## Opening a blocked site
 
 Blocked sites are not only filtered out of search results — navigating to one is
@@ -83,6 +113,29 @@ blocked addresses forever.
 
 The landing page never names the site that was blocked — being told what you were
 about to open is the reminder the page exists to avoid.
+
+### Allowed sites only (whitelist)
+
+Off by default. Switched on from the **Whitelist** toggle at the top of the settings
+page, **every site not on the allowed
+list is treated as blocked** and redirected as above. With the redirect set to **Do
+nothing**, the landing page is used instead, since otherwise the whitelist would
+have no effect.
+
+- Entries use the blocked-sites syntax: `example.com` covers its subdomains, and `*`
+  matches part of a host (`*.edu`).
+- Search engines are **not** exempt here. Add `google.com` or `search.brave.com` if you
+  still want to search.
+- The blocked lists still apply on top. A site on both lists is blocked.
+- An empty list with the whitelist on blocks every website. Extension pages and
+  `chrome://` pages are never touched.
+- Only top-level navigations are checked, not iframes or the resources a page loads.
+  A site that signs you in on another domain (`accounts.google.com`, for one) needs
+  that domain allowed too.
+- The whitelist does not hide search results; it acts when you open a site.
+
+Export and import include the allowed list (`allowedSites`). Importing fills the list
+but never switches the whitelist on.
 
 ### Custom landing HTML
 
@@ -114,8 +167,17 @@ Rules live on a full settings page — right-click the toolbar icon → **Option
 open the popup and hit **Settings & diagnostics**. The popup carries the same
 controls for quick edits; both write to the same storage and stay in sync while open.
 
-The page opens with a **Diagnostics** panel that answers the questions you cannot
-answer by looking at a search page:
+The header holds two switches: **Blocking** (the master switch) and **Whitelist**.
+Below them, three tabs:
+
+- **Blocked** — search types, blocked keywords and blocked sites. Hidden while the
+  whitelist is on. Those rules keep applying; the tab just steps aside.
+- **Whitelisted** — the allowed-sites list.
+- **Settings** — diagnostics, what opening a blocked site does, the password, and
+  export / import.
+
+The Settings tab opens with a **Diagnostics** panel that answers the questions you
+cannot answer by looking at a search page:
 
 - **Private windows** — whether the extension is actually allowed to run there,
   checked via `chrome.extension.isAllowedIncognitoAccess()`, with a button through to
@@ -138,6 +200,27 @@ with Tor* is a separate mode with the same requirement.
 
 A private search tab that does not appear under *Search tabs open now* is itself the
 answer: the extension cannot see it, so it is not blocking in it.
+
+### Password and the extensions-page guard
+
+**Password** (Settings tab) locks the popup and the settings page behind a prompt.
+Once entered it stays unlocked for 10 minutes, until **Lock now**, or until the
+browser quits. It is stored as a salted PBKDF2 hash in `chrome.storage.local`, apart
+from your synced rules, so it never syncs and export / import never touch it. A
+forgotten password cannot be recovered.
+
+**Guard the extensions page** (needs a password) sends any tab opening
+`chrome://extensions` — or `brave://extensions` — to the password prompt, and on to
+the page once it is entered. That closes the obvious way to switch the blocker off or
+remove it. Watching those tabs is why the extension asks for the `tabs` permission.
+
+An extension cannot fully stop its own removal. Right-clicking the toolbar icon →
+**Remove from Chrome** still works, as do inspecting the popup with DevTools and
+deleting the browser profile. To make the extension truly impossible to disable or
+remove, force-install it by policy — `ExtensionInstallForcelist` (Windows Group Policy,
+a macOS configuration profile, or `/etc/opt/chrome/policies/managed/` on Linux). A
+force-installed extension has no Remove or disable switch at all. Add
+`DeveloperToolsAvailability` = `2` as well to close the DevTools route.
 
 ## Rules
 

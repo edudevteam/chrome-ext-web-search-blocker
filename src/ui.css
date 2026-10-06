@@ -380,3 +380,64 @@ button.link:disabled {
 .chip__remove:hover {
   color: var(--danger);
 }
+
+/* ---------- password prompt ---------- */
+
+.lock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 320px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.lock h1 {
+  margin: 4px 0 0;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.lock p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.lock__input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.lock__input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.lock__button {
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lock__button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.lock .lock__error {
+  color: var(--danger);
+}

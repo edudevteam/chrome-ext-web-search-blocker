@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ENGINES } from '../engines';
 import { SEARCH_TYPE_LABELS, type Message, type PageStats } from '../types';
 import { RuleSections, SearchTypeSection } from '../ui/SettingsSections';
-import { Toggle } from '../ui/Toggle';
 import { buildStamp } from '../ui/buildStamp';
 import { useSettings } from '../ui/useSettings';
 
@@ -53,11 +52,6 @@ export function App() {
             </p>
           </div>
         </div>
-        <Toggle
-          checked={settings.enabled}
-          onChange={(enabled) => update({ enabled })}
-          label={settings.enabled ? 'On' : 'Off'}
-        />
       </header>
 
       <div className="status">

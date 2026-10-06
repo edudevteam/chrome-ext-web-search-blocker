@@ -73,3 +73,60 @@ describe('redirectTarget', () => {
     expect(redirectTarget(settings(['a.com'], 'url', 'javascript:alert(1)'), rules)).toBe(LANDING);
   });
 });
+
+describe('whitelist', () => {
+  function allowing(allowed: string[], mode: RedirectMode = 'landing', blocked: string[] = []) {
+    const s: Settings = {
+      ...settings(blocked, mode),
+      whitelist: { enabled: true, sites: allowed },
+    };
+    return { s, rules: compileRules(s) };
+  }
+
+  it('is off by default and changes nothing', () => {
+    const rules = rulesFor([]);
+    expect(rules.whitelist).toBeNull();
+    expect(shouldRedirect(new URL('https://anything.com/'), rules)).toBe(false);
+  });
+
+  it('redirects every site that is not allowed, subdomains and wildcards included', () => {
+    const { rules } = allowing(['example.com', '*.edu']);
+    expect(shouldRedirect(new URL('https://example.com/'), rules)).toBe(false);
+    expect(shouldRedirect(new URL('https://docs.example.com/'), rules)).toBe(false);
+    expect(shouldRedirect(new URL('https://mit.edu/'), rules)).toBe(false);
+    expect(shouldRedirect(new URL('https://other.com/'), rules)).toBe(true);
+  });
+
+  it('blocks everything when the list is empty', () => {
+    const { rules } = allowing([]);
+    expect(shouldRedirect(new URL('https://example.com/'), rules)).toBe(true);
+  });
+
+  it('does not exempt search engines unless they are allowed', () => {
+    expect(shouldRedirect(new URL('https://www.google.com/search?q=x'), allowing([]).rules)).toBe(
+      true,
+    );
+    const { rules } = allowing(['google.com']);
+    expect(shouldRedirect(new URL('https://www.google.com/search?q=x'), rules)).toBe(false);
+  });
+
+  it('lets the blocked list win over the allowed list', () => {
+    const { rules } = allowing(['example.com'], 'landing', ['bad.example.com']);
+    expect(shouldRedirect(new URL('https://example.com/'), rules)).toBe(false);
+    expect(shouldRedirect(new URL('https://bad.example.com/'), rules)).toBe(true);
+  });
+
+  it('shows the landing page even when redirects are set to do nothing', () => {
+    const { s, rules } = allowing([], 'off');
+    expect(redirectTarget(s, rules)).toBe(LANDING);
+  });
+
+  it('only redirects to a URL that is itself allowed', () => {
+    const target = (allowed: string[]) => {
+      const { s, rules } = allowing(allowed, 'url');
+      return redirectTarget({ ...s, redirect: { ...s.redirect, url: 'example.org' } }, rules);
+    };
+    expect(target(['example.org'])).toBe('https://example.org/');
+    expect(target(['a.com'])).toBe(LANDING);
+  });
+});

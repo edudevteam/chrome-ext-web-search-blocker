@@ -10,19 +10,23 @@ interface BackupProps {
 interface RuleFile {
   keywords: string[];
   sites: string[];
+  allowedSites: string[];
 }
 
-/** Accepts a full settings export or a bare `{ keywords, sites }` file. */
+/** Accepts a full settings export or a bare `{ keywords, sites, allowedSites }` file. */
 function parseRuleFile(raw: string): RuleFile {
   const data: unknown = JSON.parse(raw);
   if (typeof data !== 'object' || data === null) throw new Error('not a rules file');
-  const value = data as Partial<Settings>;
+  const value = data as Partial<Settings> & { allowedSites?: unknown };
   const strings = (input: unknown) =>
     Array.isArray(input) ? input.filter((item): item is string => typeof item === 'string') : [];
   const keywords = strings(value.keywords);
   const sites = strings(value.sites);
-  if (keywords.length === 0 && sites.length === 0) throw new Error('no rules in that file');
-  return { keywords, sites };
+  const allowedSites = strings(value.allowedSites ?? value.whitelist?.sites);
+  if (keywords.length + sites.length + allowedSites.length === 0) {
+    throw new Error('no rules in that file');
+  }
+  return { keywords, sites, allowedSites };
 }
 
 /** Case-insensitive union that keeps the existing entries and their order. */
@@ -48,6 +52,7 @@ export function Backup({ settings, update }: BackupProps) {
       version: chrome.runtime.getManifest().version,
       keywords: settings.keywords,
       sites: settings.sites,
+      allowedSites: settings.whitelist.sites,
     };
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
@@ -59,7 +64,9 @@ export function Backup({ settings, update }: BackupProps) {
     URL.revokeObjectURL(url);
     setNote({
       kind: 'ok',
-      text: `Exported ${settings.keywords.length} keywords and ${settings.sites.length} sites.`,
+      text:
+        `Exported ${settings.keywords.length} keywords, ${settings.sites.length} blocked sites ` +
+        `and ${settings.whitelist.sites.length} allowed sites.`,
     });
   };
 
@@ -68,13 +75,23 @@ export function Backup({ settings, update }: BackupProps) {
       const parsed = parseRuleFile(await file.text());
       const keywords = merge(settings.keywords, parsed.keywords);
       const sites = merge(settings.sites, parsed.sites.map(normalizeSite).filter(Boolean));
-      update({ keywords: keywords.merged, sites: sites.merged });
+      const allowed = merge(
+        settings.whitelist.sites,
+        parsed.allowedSites.map(normalizeSite).filter(Boolean),
+      );
+      // Importing never switches the whitelist on — it only fills the list.
+      update({
+        keywords: keywords.merged,
+        sites: sites.merged,
+        whitelist: { ...settings.whitelist, sites: allowed.merged },
+      });
       setNote({
         kind: 'ok',
         text:
-          keywords.added + sites.added === 0
+          keywords.added + sites.added + allowed.added === 0
             ? 'Nothing new — every rule in that file was already here.'
-            : `Added ${keywords.added} keywords and ${sites.added} sites. Nothing was removed.`,
+            : `Added ${keywords.added} keywords, ${sites.added} blocked sites and ` +
+              `${allowed.added} allowed sites. Nothing was removed.`,
       });
     } catch (error) {
       setNote({ kind: 'error', text: `Could not read that file: ${(error as Error).message}` });

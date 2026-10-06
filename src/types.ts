@@ -26,6 +26,14 @@ export interface Settings {
   redirect: RedirectSettings;
   /** Remove the image preview's filmstrip, whose thumbnails cannot be identified. */
   hidePreviewStrip: boolean;
+  /** When on, every site not listed here is treated as blocked. */
+  whitelist: WhitelistSettings;
+}
+
+export interface WhitelistSettings {
+  enabled: boolean;
+  /** Same syntax as `sites`: subdomains included, `*` wildcards allowed. */
+  sites: string[];
 }
 
 export type RedirectMode = 'off' | 'url' | 'landing';
@@ -48,6 +56,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sites: [],
   redirect: { mode: 'landing', url: '', html: '' },
   hidePreviewStrip: true,
+  whitelist: { enabled: false, sites: [] },
 };
 
 /** content script -> popup */

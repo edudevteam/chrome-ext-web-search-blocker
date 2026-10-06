@@ -13,7 +13,10 @@ export interface SiteRule {
 export interface CompiledRules {
   keywords: KeywordRule[];
   sites: SiteRule[];
+  /** Covers the blocklist only — the whitelist never hides search results. */
   empty: boolean;
+  /** Allowed sites, or null when whitelisting is off. Empty means nothing is allowed. */
+  whitelist: SiteRule[] | null;
 }
 
 const REGEX_SYNTAX = /^\/(.+)\/([gimsuy]*)$/;
@@ -81,14 +84,19 @@ function compileSite(raw: string): SiteRule | null {
   return { raw: value, test: (host) => pattern.test(host.replace(/^www\./, '')) };
 }
 
+function compileSites(raw: string[]): SiteRule[] {
+  return [...new Set(raw.map(normalizeSite).filter(Boolean))]
+    .map(compileSite)
+    .filter((rule): rule is SiteRule => rule !== null);
+}
+
 export function compileRules(settings: Settings): CompiledRules {
   const keywords = settings.keywords
     .map(compileKeyword)
     .filter((rule): rule is KeywordRule => rule !== null);
-  const sites = [...new Set(settings.sites.map(normalizeSite).filter(Boolean))]
-    .map(compileSite)
-    .filter((rule): rule is SiteRule => rule !== null);
-  return { keywords, sites, empty: keywords.length === 0 && sites.length === 0 };
+  const sites = compileSites(settings.sites);
+  const whitelist = settings.whitelist.enabled ? compileSites(settings.whitelist.sites) : null;
+  return { keywords, sites, empty: keywords.length === 0 && sites.length === 0, whitelist };
 }
 
 /** `news.example.com` matches the rule `example.com`, `notexample.com` does not. */

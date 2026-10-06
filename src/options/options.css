@@ -37,6 +37,53 @@ body {
   color: var(--muted);
 }
 
+.page__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px 20px;
+}
+
+/* ---------- tabs ---------- */
+
+.page-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.page-tabs__tab {
+  flex: 1;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.page-tabs__tab:hover {
+  color: var(--text);
+}
+
+.page-tabs__tab--active,
+.page-tabs__tab--active:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.page-tabs__tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .card {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -369,4 +416,15 @@ code {
   padding: 48px;
   text-align: center;
   color: var(--muted);
+}
+
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 320px;
+}
+
+.password-form .backup__actions {
+  margin-top: 2px;
 }

@@ -5,6 +5,7 @@ import {
   type RedirectMode,
   type RedirectSettings,
   type Settings,
+  type WhitelistSettings,
 } from './types';
 
 const REDIRECT_MODES: RedirectMode[] = ['off', 'url', 'landing'];
@@ -17,6 +18,14 @@ function normalizeRedirect(raw: unknown): RedirectSettings {
       : DEFAULT_SETTINGS.redirect.mode,
     url: typeof value.url === 'string' ? value.url : '',
     html: typeof value.html === 'string' ? value.html.slice(0, MAX_LANDING_HTML) : '',
+  };
+}
+
+function normalizeWhitelist(raw: unknown): WhitelistSettings {
+  const value = (raw ?? {}) as Partial<WhitelistSettings>;
+  return {
+    enabled: typeof value.enabled === 'boolean' ? value.enabled : DEFAULT_SETTINGS.whitelist.enabled,
+    sites: Array.isArray(value.sites) ? value.sites.filter((s) => typeof s === 'string') : [],
   };
 }
 
@@ -40,6 +49,7 @@ function normalize(raw: unknown): Settings {
       typeof value.hidePreviewStrip === 'boolean'
         ? value.hidePreviewStrip
         : DEFAULT_SETTINGS.hidePreviewStrip,
+    whitelist: normalizeWhitelist(value.whitelist),
   };
 }
 

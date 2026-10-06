@@ -28,8 +28,9 @@ export function RedirectSection({ settings, update }: RedirectSectionProps) {
         <h2>Opening a blocked site</h2>
       </header>
       <p className="section__hint">
-        Applies to the sites in your blocked list, with the same wildcards. Search engines
-        are never redirected, so a rule that names one still just filters its results.
+        Applies to the sites in your blocked list, with the same wildcards, and to every
+        site off the allowed list when that is on. Search engines are never redirected for
+        a blocked-list rule, so one that names an engine still just filters its results.
       </p>
 
       <div className="modes">
