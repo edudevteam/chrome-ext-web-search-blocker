@@ -1,10 +1,12 @@
 import {
   DEFAULT_SETTINGS,
   MAX_LANDING_HTML,
+  MAX_TAB_TITLE,
   SEARCH_TYPES,
   type RedirectMode,
   type RedirectSettings,
   type Settings,
+  type TabSettings,
   type WhitelistSettings,
 } from './types';
 
@@ -29,6 +31,15 @@ function normalizeWhitelist(raw: unknown): WhitelistSettings {
   };
 }
 
+function normalizeTab(raw: unknown): TabSettings {
+  const value = (raw ?? {}) as Partial<TabSettings>;
+  return {
+    customTitle: value.customTitle === true,
+    title: typeof value.title === 'string' ? value.title.slice(0, MAX_TAB_TITLE) : '',
+    customIcon: value.customIcon === true,
+  };
+}
+
 const KEY = 'settings';
 const area = chrome.storage.sync;
 
@@ -50,6 +61,7 @@ function normalize(raw: unknown): Settings {
         ? value.hidePreviewStrip
         : DEFAULT_SETTINGS.hidePreviewStrip,
     whitelist: normalizeWhitelist(value.whitelist),
+    tab: normalizeTab(value.tab),
   };
 }
 

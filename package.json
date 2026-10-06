@@ -1,7 +1,7 @@
 {
   "name": "web-content-blocker",
   "private": true,
-  "version": "1.1.1",
+  "version": "1.1.11",
   "type": "module",
   "description": "MV3 extension that blocks search results by keyword or site across every search type.",
   "scripts": {

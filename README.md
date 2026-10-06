@@ -1,11 +1,25 @@
+![Web Content Blocker](readme-banner.png)
+
 # Web Content Blocker
 
-A Manifest V3 extension (Vite + React + TypeScript, pnpm) that hides search results
-matching your blocked keywords and sites — on **Brave Search** and **Google**, across
-every result tab: **All, Images, News, Videos, Maps, Goggles**.
+A Manifest V3 extension (Vite + React + TypeScript, pnpm) for Chrome and Brave that
+keeps the web limited to what you choose to see.
 
-Every tab type is blocked by default; each one has its own switch, plus a master
-on/off.
+- **Search result filtering** — hides results matching your blocked keywords and
+  sites on **Brave Search** and **Google**, across every result tab: **All, Images,
+  News, Videos, Maps, Goggles**. Every tab type is blocked by default; each has its
+  own switch, plus a master on/off.
+- **Site blocking** — opening a blocked site sends the tab to a calm landing page or
+  an address of your choice.
+- **Whitelist mode** — flip it on and *only* the sites you allow can be opened.
+- **Password lock** — protects the popup and settings, and can guard the browser's
+  extensions page so the blocker can't be switched off on impulse.
+- **New tab page** — the same quiet landing page, with rotating sayings and shortcuts
+  to your allowed sites.
+- **Your own sayings and tab look** — upload sayings to replace the built-in
+  proverbs, and set a custom tab title and icon.
+
+Nothing leaves your browser — see [PRIVACY.md](PRIVACY.md).
 
 ## Build and load
 
@@ -85,9 +99,9 @@ manifest inside. The Store refuses a re-upload at a version it already has, so e
 submission needs a fresh build anyway. Running `node scripts/pack.mjs` directly skips
 the build and fails if `dist/` has drifted from `package.json`.
 
-Review will ask you to justify `<all_urls>`; the answer is in
-[*The permission this needs*](#the-permission-this-needs) below — it is for the service
-worker's `webNavigation` listener, not for injecting scripts. Publishing **Unlisted**
+Review asks you to justify each permission; the reasoning is in
+[*The permissions this needs*](#the-permissions-this-needs) below, and the privacy
+policy is [PRIVACY.md](PRIVACY.md). Publishing **Unlisted**
 gets you an install link without the discovery-surface scrutiny of a public listing,
 and can be flipped public later.
 
@@ -149,17 +163,44 @@ inside `chrome.storage.sync`'s per-item limit.
 The eight verses are King James Version, which is public domain. **Preview landing
 page** opens it in a tab.
 
-### The permission this needs
+With the whitelist on, the landing page also lists the sites you can still go to.
 
-Intercepting navigation means the extension now requests `webNavigation` and
-`<all_urls>` host access, which Chrome describes as *"Read and change all your data on
-all websites."* That is inherent to redirecting an arbitrary site you have blocked —
-the browser cannot tell the extension about a navigation to a host it holds no
-permission for.
+### Your own sayings
 
-The content script's own `matches` are unchanged: it still only runs on Brave Search
-and Google. Only the service worker's navigation listener uses the wider access, and
-it reads nothing but the URL.
+**Upload sayings** replaces the proverbs with your own list (up to 1000), kept in
+`chrome.storage.local`. Two formats:
+
+- **Plain text** — one saying per line, with an optional attribution after ` — `,
+  ` -- ` or ` | `, e.g. `Stay the course — Grandpa`.
+- **JSON** — an array of strings or of `{ "text", "ref" }` objects, bare or under a
+  `"sayings"` key.
+
+**Use proverbs** goes back to the built-in set.
+
+### New tab page
+
+The extension replaces the browser's new tab page with the landing page, minus the
+"Not this way" heading, since you chose to come here. It shows the same rotating
+sayings and, with the whitelist on, your allowed sites as shortcuts.
+
+### Browser tab title and icon
+
+**Browser tab** on the settings page sets a custom title and favicon for the landing
+and new tab pages. Pick a preset icon (globe, document, spreadsheet, …) or upload an
+image, which is scaled to 64 px and kept in `chrome.storage.local`. Both are off by
+default.
+
+### The permissions this needs
+
+| Permission | Why |
+| --- | --- |
+| `storage` | Your rules, password hash, sayings and tab icon. |
+| `webNavigation` | Sees top-level navigations so a blocked (or non-whitelisted) site can be redirected. It reads only the URL. |
+| `tabs` | Reads tab URLs for the extensions-page guard (webNavigation never fires for `chrome://` pages) and finds search tabs for the popup and diagnostics. |
+
+There is no broad host permission. The content script only runs on Brave Search and
+Google, and the navigation listener gets URLs from `webNavigation` without needing
+host access.
 
 ## Settings page
 
@@ -385,9 +426,13 @@ src/ui.css               shared design tokens and control styles
 src/popup/               compact popup (index.html)
 src/options/             full settings page + diagnostics (options.html)
 src/blocked/             landing page shown instead of a blocked site (blocked.html)
+newtab.html              new tab override, reusing src/blocked/ as a home page
 src/landing.ts           default template + the proverbs it rotates
+src/sayings.ts           parsing and storage for uploaded sayings
+src/tabIcon.ts           custom tab title and favicon (+ tabIconPresets.ts)
+src/lock.ts              password hash, unlock window, extensions-page check
 src/redirect.ts          where a blocked navigation is sent, and when not to
-src/background.ts        service worker: badge counts + navigation redirects
+src/background.ts        service worker: badge counts, redirects, extensions guard
 scripts/generate-icons.mjs  renders the toolbar PNGs, no image dependencies
 ```
 
@@ -399,8 +444,8 @@ script, which MV3 requires to be a single non-module IIFE.
 ## Adding another engine or domain
 
 Google is matched on `https://*.google.com/*` only. For a country domain
-(`google.co.uk`, …) add it to both `host_permissions` and `content_scripts.matches`
-in `public/manifest.json`; the engine's own `matches` test already accepts any
+(`google.co.uk`, …) add it to `content_scripts.matches` in
+`public/manifest.json`; the engine's own `matches` test already accepts any
 `google.*` host. A different search engine is a new entry in `ENGINES`.
 
 ## Known limits

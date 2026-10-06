@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { DEFAULT_LANDING_HTML } from '../landing';
 import { LANDING_PAGE } from '../redirect';
 import { MAX_LANDING_HTML, type RedirectMode, type Settings } from '../types';
+import { SayingsField } from './SayingsField';
 
 interface RedirectSectionProps {
   settings: Settings;
@@ -9,7 +10,7 @@ interface RedirectSectionProps {
 }
 
 const MODES: { value: RedirectMode; label: string; hint: string }[] = [
-  { value: 'landing', label: 'Show a landing page', hint: 'A quiet page with a rotating proverb' },
+  { value: 'landing', label: 'Show a landing page', hint: 'A quiet page with a rotating saying' },
   { value: 'url', label: 'Send me somewhere else', hint: 'Any address you choose' },
   { value: 'off', label: 'Do nothing', hint: 'Only filter search results' },
 ];
@@ -94,7 +95,7 @@ export function RedirectSection({ settings, update }: RedirectSectionProps) {
                 </button>
               </div>
               <p className="section__hint">
-                An element with <code>id="wcb-quote"</code> is filled with a rotating proverb;
+                An element with <code>id="wcb-quote"</code> is filled with a rotating saying;
                 leave it out for a static page. <code>&lt;style&gt;</code> works,
                 <code>&lt;script&gt;</code> does not run.
               </p>
@@ -103,9 +104,11 @@ export function RedirectSection({ settings, update }: RedirectSectionProps) {
             <p className="section__hint">
               {custom
                 ? 'Your own markup is in use.'
-                : 'Eight proverbs, one at a time, rotating every twelve seconds.'}
+                : 'One saying at a time, rotating every twelve seconds.'}
             </p>
           )}
+
+          <SayingsField />
 
           <button
             type="button"

@@ -25,12 +25,13 @@
   box-sizing: border-box;
 }
 
-html,
-body {
+html {
   height: 100%;
 }
 
 body {
+  /* min-height, so a long allowed-sites list scrolls instead of clipping. */
+  min-height: 100%;
   margin: 0;
   background: var(--ground);
   color: var(--ink);
@@ -94,7 +95,73 @@ body {
   color: var(--ink-soft);
 }
 
+.wcb-allowed {
+  margin-top: 56px;
+  text-align: center;
+}
+
+.wcb-allowed__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  text-align: left;
+}
+
+.wcb-card {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  column-gap: 12px;
+  align-items: center;
+  height: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  /* Always white, so the ink is pinned too — inheriting would go pale in dark mode. */
+  background: #fff;
+  color: #1c1a17;
+  text-decoration: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+
+a.wcb-card:hover,
+a.wcb-card:focus-visible {
+  border-color: var(--ink-soft);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.wcb-card__mark {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #efe9df;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.wcb-card__name {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.wcb-card__note {
+  font-size: 12px;
+  color: #6b6459;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .wcb-card {
+    transition: none;
+  }
+
+
   #wcb-quote {
     transition: none;
   }

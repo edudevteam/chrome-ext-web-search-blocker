@@ -5,12 +5,12 @@ body {
   overflow-y: auto;
 }
 
-.popup-footer {
+.popup-settings {
   padding: 12px 16px;
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
-.popup-footer button {
+.popup-settings button {
   width: 100%;
   padding: 8px;
   border: 1px solid var(--border);
@@ -22,7 +22,7 @@ body {
   cursor: pointer;
 }
 
-.popup-footer button:hover {
+.popup-settings button:hover {
   border-color: var(--accent);
   color: var(--accent);
 }

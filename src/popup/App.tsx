@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ENGINES } from '../engines';
 import { SEARCH_TYPE_LABELS, type Message, type PageStats } from '../types';
-import { RuleSections, SearchTypeSection } from '../ui/SettingsSections';
+import { RuleSections } from '../ui/SettingsSections';
 import { buildStamp } from '../ui/buildStamp';
 import { useSettings } from '../ui/useSettings';
 
@@ -54,6 +54,12 @@ export function App() {
         </div>
       </header>
 
+      <div className="popup-settings">
+        <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
+          Settings &amp; diagnostics ↗
+        </button>
+      </div>
+
       <div className="status">
         {stats === undefined ? (
           <span className="status__muted">Checking this tab…</span>
@@ -76,14 +82,7 @@ export function App() {
         )}
       </div>
 
-      <SearchTypeSection settings={settings} update={update} />
       <RuleSections settings={settings} update={update} />
-
-      <div className="popup-footer">
-        <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
-          Settings &amp; diagnostics ↗
-        </button>
-      </div>
     </div>
   );
 }

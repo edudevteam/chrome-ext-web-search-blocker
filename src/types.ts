@@ -28,7 +28,19 @@ export interface Settings {
   hidePreviewStrip: boolean;
   /** When on, every site not listed here is treated as blocked. */
   whitelist: WhitelistSettings;
+  /** How the landing and new tab pages present themselves in the tab strip. */
+  tab: TabSettings;
 }
+
+export interface TabSettings {
+  /** Replace the page's own title with `title`. */
+  customTitle: boolean;
+  title: string;
+  /** Use the uploaded icon (see tabIcon.ts) as the favicon. */
+  customIcon: boolean;
+}
+
+export const MAX_TAB_TITLE = 100;
 
 export interface WhitelistSettings {
   enabled: boolean;
@@ -57,6 +69,7 @@ export const DEFAULT_SETTINGS: Settings = {
   redirect: { mode: 'landing', url: '', html: '' },
   hidePreviewStrip: true,
   whitelist: { enabled: false, sites: [] },
+  tab: { customTitle: false, title: '', customIcon: false },
 };
 
 /** content script -> popup */

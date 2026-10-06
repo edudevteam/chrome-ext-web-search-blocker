@@ -1,5 +1,7 @@
-/** King James Version — public domain. */
-export const PROVERBS: { text: string; ref: string }[] = [
+import type { Saying } from './sayings';
+
+/** King James Version — public domain. Replaced by any sayings you upload. */
+export const PROVERBS: Saying[] = [
   {
     text: 'Trust in the LORD with all thine heart; and lean not unto thine own understanding.',
     ref: 'Proverbs 3:5',
@@ -49,4 +51,6 @@ export const DEFAULT_LANDING_HTML = `<main class="wcb-landing">
 </main>`;
 
 export const LANDING_HELP = `Any element with id="wcb-quote" is filled with a rotating
-proverb. Styles are up to you — inline <style> works. Scripts do not run.`;
+saying. With the whitelist on, allowed sites are listed in id="wcb-allowed", or
+below your markup if it has none. Styles are up to you — inline <style> works.
+Scripts do not run.`;

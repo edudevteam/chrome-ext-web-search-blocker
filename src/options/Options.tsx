@@ -7,6 +7,7 @@ import { Backup } from './Backup';
 import { Diagnostics } from './Diagnostics';
 import { PasswordSection } from './PasswordSection';
 import { RedirectSection } from './RedirectSection';
+import { TabSection } from './TabSection';
 import { WhitelistSection } from './WhitelistSection';
 
 type Tab = 'blocked' | 'whitelisted' | 'settings';
@@ -79,14 +80,9 @@ export function Options() {
       </nav>
 
       {tab === 'blocked' ? (
-        <>
-          <div className="card">
-            <SearchTypeSection settings={settings} update={update} />
-          </div>
-          <div className="card">
-            <RuleSections settings={settings} update={update} />
-          </div>
-        </>
+        <div className="card">
+          <RuleSections settings={settings} update={update} />
+        </div>
       ) : null}
 
       {tab === 'whitelisted' ? (
@@ -99,7 +95,13 @@ export function Options() {
         <>
           <Diagnostics />
           <div className="card">
+            <SearchTypeSection settings={settings} update={update} />
+          </div>
+          <div className="card">
             <RedirectSection settings={settings} update={update} />
+          </div>
+          <div className="card">
+            <TabSection settings={settings} update={update} />
           </div>
           <div className="card">
             <PasswordSection />

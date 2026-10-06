@@ -20,6 +20,7 @@ export default defineConfig({
         index: resolve(import.meta.dirname, 'index.html'),
         options: resolve(import.meta.dirname, 'options.html'),
         blocked: resolve(import.meta.dirname, 'blocked.html'),
+        newtab: resolve(import.meta.dirname, 'newtab.html'),
         background: resolve(import.meta.dirname, 'src/background.ts'),
       },
       output: {
