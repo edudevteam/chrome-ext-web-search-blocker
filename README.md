@@ -163,7 +163,38 @@ inside `chrome.storage.sync`'s per-item limit.
 The eight verses are King James Version, which is public domain. **Preview landing
 page** opens it in a tab.
 
-With the whitelist on, the landing page also lists the sites you can still go to.
+With the whitelist on, the landing page also lists the sites you can still go to:
+in an element with `id="wcb-allowed"` if the markup has one, otherwise below it.
+
+To design the site cards yourself, add a `<template id="wcb-site">`. It is repeated
+once per allowed site, in its own place, with these placeholders filled into text
+and attributes:
+
+| Placeholder | Becomes |
+| --- | --- |
+| `{{url}}` | `https://` address of the site. Empty for a wildcard rule, and an empty `href` is dropped so the link goes inert. |
+| `{{site}}` | The allowed-list entry as written. |
+| `{{image}}` | Your image for the site, set under **Site images** in the editor. Empty when none is set; an empty `src` is dropped and the stamped element gets `data-no-image`, so CSS can show a fallback. |
+| `{{favicon}}` | The site's icon from the browser's favicon cache (a globe if it has never been visited). |
+| `{{initial}}` | First letter of the site. |
+
+```html
+<ul class="sites">
+  <template id="wcb-site">
+    <li><a href="{{url}}"><img src="{{favicon}}" alt="" /> {{site}}</a></li>
+  </template>
+</ul>
+```
+
+Each stamped element gets `data-site` (and `data-pattern` for wildcard rules) for
+styling.
+
+Site images are http(s) addresses, one per allowed site, kept in
+`chrome.storage.local` (not synced, and not part of export/import) so they don't
+count against the custom HTML's space. They load from any host: the whitelist only
+checks pages you open, not the images a page shows. Each one does request the image
+from its host whenever the landing page opens. **Open editor with live preview** opens a full-tab editor with insert
+buttons for these snippets and a live preview beside it.
 
 ### Your own sayings
 
@@ -197,6 +228,7 @@ default.
 | `storage` | Your rules, password hash, sayings and tab icon. |
 | `webNavigation` | Sees top-level navigations so a blocked (or non-whitelisted) site can be redirected. It reads only the URL. |
 | `tabs` | Reads tab URLs for the extensions-page guard (webNavigation never fires for `chrome://` pages) and finds search tabs for the popup and diagnostics. |
+| `favicon` | Shows allowed sites' icons through `{{favicon}}` in a custom landing page, read from the browser's own icon cache, so no request leaves the browser. |
 
 There is no broad host permission. The content script only runs on Brave Search and
 Google, and the navigation listener gets URLs from `webNavigation` without needing

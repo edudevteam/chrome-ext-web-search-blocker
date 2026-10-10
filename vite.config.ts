@@ -21,6 +21,7 @@ export default defineConfig({
         options: resolve(import.meta.dirname, 'options.html'),
         blocked: resolve(import.meta.dirname, 'blocked.html'),
         newtab: resolve(import.meta.dirname, 'newtab.html'),
+        editor: resolve(import.meta.dirname, 'editor.html'),
         background: resolve(import.meta.dirname, 'src/background.ts'),
       },
       output: {

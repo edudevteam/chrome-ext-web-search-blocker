@@ -119,6 +119,13 @@ export function RedirectSection({ settings, update }: RedirectSectionProps) {
                     Reset to default
                   </button>
                 </div>
+                <button
+                  type="button"
+                  className="preview"
+                  onClick={() => void chrome.tabs.create({ url: chrome.runtime.getURL('editor.html') })}
+                >
+                  Open editor with live preview
+                </button>
                 <p className="section__hint">
                   An element with <code>id="wcb-quote"</code> is filled with a rotating phrase;
                   leave it out for a static page. <code>&lt;style&gt;</code> works,
