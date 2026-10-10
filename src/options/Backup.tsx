@@ -45,6 +45,9 @@ function merge(current: string[], incoming: string[]): { merged: string[]; added
 export function Backup({ settings, update }: BackupProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [mode, setMode] = useState<'append' | 'replace'>('append');
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const exportRules = () => {
     const payload = {
@@ -70,32 +73,97 @@ export function Backup({ settings, update }: BackupProps) {
     });
   };
 
-  const importRules = async (file: File) => {
-    try {
-      const parsed = parseRuleFile(await file.text());
-      const keywords = merge(settings.keywords, parsed.keywords);
-      const sites = merge(settings.sites, parsed.sites.map(normalizeSite).filter(Boolean));
-      const allowed = merge(
-        settings.whitelist.sites,
-        parsed.allowedSites.map(normalizeSite).filter(Boolean),
+  const applyRules = (raw: string, source: string) => {
+    const parsed = parseRuleFile(raw);
+    const incomingSites = parsed.sites.map(normalizeSite).filter(Boolean);
+    const incomingAllowed = parsed.allowedSites.map(normalizeSite).filter(Boolean);
+
+    if (mode === 'replace') {
+      const keywords = merge([], parsed.keywords).merged;
+      const sites = merge([], incomingSites).merged;
+      const allowed = merge([], incomingAllowed).merged;
+      const ok = window.confirm(
+        `Replace all of your rules with the ${keywords.length} keywords, ${sites.length} ` +
+          `blocked sites and ${allowed.length} allowed sites from ${source}?\n\n` +
+          `Your current ${settings.keywords.length} keywords, ${settings.sites.length} blocked ` +
+          `sites and ${settings.whitelist.sites.length} allowed sites will be removed.`,
       );
-      // Importing never switches the whitelist on — it only fills the list.
-      update({
-        keywords: keywords.merged,
-        sites: sites.merged,
-        whitelist: { ...settings.whitelist, sites: allowed.merged },
-      });
+      if (!ok) {
+        setNote(null);
+        return;
+      }
+      update({ keywords, sites, whitelist: { ...settings.whitelist, sites: allowed } });
       setNote({
         kind: 'ok',
         text:
-          keywords.added + sites.added + allowed.added === 0
-            ? 'Nothing new — every rule in that file was already here.'
-            : `Added ${keywords.added} keywords, ${sites.added} blocked sites and ` +
-              `${allowed.added} allowed sites. Nothing was removed.`,
+          `Replaced your rules with ${keywords.length} keywords, ${sites.length} blocked sites ` +
+          `and ${allowed.length} allowed sites.`,
       });
+      return;
+    }
+
+    const keywords = merge(settings.keywords, parsed.keywords);
+    const sites = merge(settings.sites, incomingSites);
+    const allowed = merge(settings.whitelist.sites, incomingAllowed);
+    // Importing never switches the whitelist on — it only fills the list.
+    update({
+      keywords: keywords.merged,
+      sites: sites.merged,
+      whitelist: { ...settings.whitelist, sites: allowed.merged },
+    });
+    setNote({
+      kind: 'ok',
+      text:
+        keywords.added + sites.added + allowed.added === 0
+          ? `Nothing new — every rule in ${source} was already here.`
+          : `Added ${keywords.added} keywords, ${sites.added} blocked sites and ` +
+            `${allowed.added} allowed sites. Nothing was removed.`,
+    });
+  };
+
+  const importFile = async (file: File) => {
+    try {
+      applyRules(await file.text(), 'that file');
     } catch (error) {
       setNote({ kind: 'error', text: `Could not read that file: ${(error as Error).message}` });
     }
+  };
+
+  const importUrl = () => {
+    let target: URL;
+    try {
+      target = new URL(url.trim());
+      if (target.protocol !== 'https:' && target.protocol !== 'http:') throw new Error();
+    } catch {
+      setNote({ kind: 'error', text: 'Enter a full http:// or https:// address.' });
+      return;
+    }
+    // Ask for access to just this host. This must run inside the click, before any await.
+    chrome.permissions.request({ origins: [`${target.origin}/*`] }, (granted) => {
+      if (!granted) {
+        setNote({ kind: 'error', text: `Permission to read ${target.host} was not given.` });
+        return;
+      }
+      void (async () => {
+        setLoading(true);
+        setNote(null);
+        try {
+          const response = await fetch(target, {
+            cache: 'no-store',
+            credentials: 'omit',
+            signal: AbortSignal.timeout(15000),
+          });
+          if (!response.ok) throw new Error(`the server answered ${response.status}`);
+          applyRules(await response.text(), target.host);
+        } catch (error) {
+          const message =
+            error instanceof SyntaxError ? 'that is not a JSON rules file' : (error as Error).message;
+          setNote({ kind: 'error', text: `Could not import from that URL: ${message}` });
+        } finally {
+          setLoading(false);
+        }
+      })();
+    });
   };
 
   return (
@@ -110,8 +178,40 @@ export function Backup({ settings, update }: BackupProps) {
         <button type="button" onClick={exportRules}>
           Export rules
         </button>
+      </div>
+
+      <div className="modes backup__modes">
+        <label className="mode">
+          <input
+            type="radio"
+            name="import-mode"
+            checked={mode === 'append'}
+            onChange={() => setMode('append')}
+          />
+          <span className="mode__body">
+            <span className="mode__label">Import (append to existing)</span>
+            <span className="mode__hint">Adds new rules. Nothing you already have is removed.</span>
+          </span>
+        </label>
+        <label className="mode">
+          <input
+            type="radio"
+            name="import-mode"
+            checked={mode === 'replace'}
+            onChange={() => setMode('replace')}
+          />
+          <span className="mode__body">
+            <span className="mode__label">Import (replace all)</span>
+            <span className="mode__hint">
+              Your keywords, blocked sites and allowed sites become exactly what is imported.
+            </span>
+          </span>
+        </label>
+      </div>
+
+      <div className="backup__actions">
         <button type="button" onClick={() => fileInput.current?.click()}>
-          Import rules
+          Import from file
         </button>
         <input
           ref={fileInput}
@@ -120,12 +220,35 @@ export function Backup({ settings, update }: BackupProps) {
           hidden
           onChange={(event) => {
             const file = event.target.files?.[0];
-            if (file) void importRules(file);
+            if (file) void importFile(file);
             event.target.value = ''; // let the same file be picked twice
           }}
         />
       </div>
-      <p className="section__hint">Importing merges — it only ever adds rules, never removes.</p>
+
+      <form
+        className="backup__actions backup__url"
+        onSubmit={(event) => {
+          event.preventDefault();
+          importUrl();
+        }}
+      >
+        <input
+          className="text-input"
+          type="url"
+          value={url}
+          placeholder="https://example.com/rules.json"
+          spellCheck={false}
+          autoComplete="off"
+          onChange={(event) => setUrl(event.target.value)}
+        />
+        <button type="submit" disabled={loading || url.trim() === ''}>
+          {loading ? 'Importing…' : 'Import from URL'}
+        </button>
+      </form>
+      <p className="section__hint">
+        The URL must point to a JSON export. Chrome will ask once for permission to read that site.
+      </p>
       {note ? <p className={`backup__note backup__note--${note.kind}`}>{note.text}</p> : null}
     </div>
   );

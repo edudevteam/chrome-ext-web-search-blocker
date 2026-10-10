@@ -7,6 +7,7 @@ import { Backup } from './Backup';
 import { Diagnostics } from './Diagnostics';
 import { PasswordSection } from './PasswordSection';
 import { RedirectSection } from './RedirectSection';
+import { SettingsNav, type SettingsPane } from './SettingsNav';
 import { TabSection } from './TabSection';
 import { WhitelistSection } from './WhitelistSection';
 
@@ -21,6 +22,7 @@ const TAB_LABELS: Record<Tab, string> = {
 export function Options() {
   const [settings, update] = useSettings();
   const [chosen, setChosen] = useState<Tab | null>(null);
+  const [pane, setPane] = useState<SettingsPane>('diagnostics');
 
   if (!settings) return <div className="loading">Loading…</div>;
 
@@ -92,26 +94,39 @@ export function Options() {
       ) : null}
 
       {tab === 'settings' ? (
-        <>
-          <Diagnostics />
-          <div className="card">
-            <SearchTypeSection settings={settings} update={update} />
+        <div className="settings">
+          <SettingsNav active={pane} onSelect={setPane} />
+          <div className="settings__pane">
+            {pane === 'diagnostics' ? <Diagnostics /> : null}
+            {pane === 'search' ? (
+              <div className="card">
+                <SearchTypeSection settings={settings} update={update} />
+              </div>
+            ) : null}
+            {pane === 'redirect' ? (
+              <div className="card">
+                <RedirectSection settings={settings} update={update} />
+              </div>
+            ) : null}
+            {pane === 'tab' ? (
+              <div className="card">
+                <TabSection settings={settings} update={update} />
+              </div>
+            ) : null}
+            {pane === 'password' ? (
+              <div className="card">
+                <PasswordSection />
+              </div>
+            ) : null}
+            {pane === 'backup' ? (
+              <div className="card">
+                <section className="section">
+                  <Backup settings={settings} update={update} />
+                </section>
+              </div>
+            ) : null}
           </div>
-          <div className="card">
-            <RedirectSection settings={settings} update={update} />
-          </div>
-          <div className="card">
-            <TabSection settings={settings} update={update} />
-          </div>
-          <div className="card">
-            <PasswordSection />
-          </div>
-          <div className="card">
-            <section className="section">
-              <Backup settings={settings} update={update} />
-            </section>
-          </div>
-        </>
+        </div>
       ) : null}
 
       <p className="page__foot">
