@@ -54,6 +54,8 @@ export interface RedirectSettings {
   mode: RedirectMode;
   /** Where to send you when mode is 'url'. */
   url: string;
+  /** Use `html` in place of the built-in landing page. Off keeps `html` saved. */
+  customHtml: boolean;
   /** Landing page markup. Empty means the built-in template. */
   html: string;
 }
@@ -66,7 +68,7 @@ export const DEFAULT_SETTINGS: Settings = {
   types: { all: true, images: true, news: true, videos: true, maps: true, goggles: true },
   keywords: [],
   sites: [],
-  redirect: { mode: 'landing', url: '', html: '' },
+  redirect: { mode: 'landing', url: '', customHtml: false, html: '' },
   hidePreviewStrip: true,
   whitelist: { enabled: false, sites: [] },
   tab: { customTitle: false, title: '', customIcon: false },

@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { DEFAULT_LANDING_HTML } from '../landing';
 import { LANDING_PAGE } from '../redirect';
 import { MAX_LANDING_HTML, type RedirectMode, type Settings } from '../types';
+import { Toggle } from '../ui/Toggle';
 import { SayingsField } from './SayingsField';
 
 interface RedirectSectionProps {
@@ -10,15 +10,14 @@ interface RedirectSectionProps {
 }
 
 const MODES: { value: RedirectMode; label: string; hint: string }[] = [
-  { value: 'landing', label: 'Show a landing page', hint: 'A quiet page with a rotating saying' },
+  { value: 'landing', label: 'Show a landing page', hint: 'A quiet page with a rotating phrase' },
   { value: 'url', label: 'Send me somewhere else', hint: 'Any address you choose' },
   { value: 'off', label: 'Do nothing', hint: 'Only filter search results' },
 ];
 
 export function RedirectSection({ settings, update }: RedirectSectionProps) {
   const { redirect } = settings;
-  const [editing, setEditing] = useState(false);
-  const custom = redirect.html.trim().length > 0;
+  const custom = redirect.customHtml && redirect.html.trim().length > 0;
 
   const patch = (next: Partial<Settings['redirect']>) =>
     update({ redirect: { ...redirect, ...next } });
@@ -68,56 +67,71 @@ export function RedirectSection({ settings, update }: RedirectSectionProps) {
       ) : null}
 
       {redirect.mode === 'landing' ? (
-        <div className="field">
-          <div className="field__head">
-            <strong>{custom ? 'Custom landing page' : 'Built-in landing page'}</strong>
-            <button type="button" className="link" onClick={() => setEditing((open) => !open)}>
-              {editing ? 'Done' : custom ? 'Edit HTML' : 'Customise HTML'}
-            </button>
-          </div>
-
-          {editing ? (
-            <>
-              <textarea
-                className="html-input"
-                rows={12}
-                spellCheck={false}
-                value={redirect.html || DEFAULT_LANDING_HTML}
-                maxLength={MAX_LANDING_HTML}
-                onChange={(event) => patch({ html: event.target.value })}
-              />
-              <div className="field__head">
-                <span className="section__hint">
-                  {(redirect.html || DEFAULT_LANDING_HTML).length} / {MAX_LANDING_HTML} characters
-                </span>
-                <button type="button" className="link" onClick={() => patch({ html: '' })}>
-                  Reset to default
-                </button>
-              </div>
-              <p className="section__hint">
-                An element with <code>id="wcb-quote"</code> is filled with a rotating saying;
-                leave it out for a static page. <code>&lt;style&gt;</code> works,
-                <code>&lt;script&gt;</code> does not run.
-              </p>
-            </>
-          ) : (
+        <>
+          <div className="subsection">
+            <h3 className="subsection__title">Landing Page Format</h3>
+            <div className="field__head">
+              <strong>{custom ? 'Custom landing page' : 'Built-in landing page'}</strong>
+            </div>
             <p className="section__hint">
               {custom
                 ? 'Your own markup is in use.'
-                : 'One saying at a time, rotating every twelve seconds.'}
+                : 'One phrase at a time, rotating every twelve seconds.'}
             </p>
-          )}
+            <button
+              type="button"
+              className="preview"
+              onClick={() => void chrome.tabs.create({ url: chrome.runtime.getURL(LANDING_PAGE) })}
+            >
+              Preview landing page
+            </button>
+          </div>
 
-          <SayingsField />
+          <div className="subsection">
+            <h3 className="subsection__title">Rotating Phrases</h3>
+            <SayingsField />
+          </div>
 
-          <button
-            type="button"
-            className="preview"
-            onClick={() => void chrome.tabs.create({ url: chrome.runtime.getURL(LANDING_PAGE) })}
-          >
-            Preview landing page
-          </button>
-        </div>
+          <div className="subsection">
+            <h3 className="subsection__title">Custom HTML</h3>
+            <Toggle
+              checked={redirect.customHtml}
+              onChange={(customHtml) => patch({ customHtml })}
+              label="Use custom HTML"
+              hint="Replaces the built-in landing page's look and feel with your own markup."
+            />
+
+            {redirect.customHtml ? (
+              <>
+                <textarea
+                  className="html-input"
+                  rows={12}
+                  spellCheck={false}
+                  value={redirect.html || DEFAULT_LANDING_HTML}
+                  maxLength={MAX_LANDING_HTML}
+                  onChange={(event) => patch({ html: event.target.value })}
+                />
+                <div className="field__head">
+                  <span className="section__hint">
+                    {(redirect.html || DEFAULT_LANDING_HTML).length} / {MAX_LANDING_HTML} characters
+                  </span>
+                  <button type="button" className="link" onClick={() => patch({ html: '' })}>
+                    Reset to default
+                  </button>
+                </div>
+                <p className="section__hint">
+                  An element with <code>id="wcb-quote"</code> is filled with a rotating phrase;
+                  leave it out for a static page. <code>&lt;style&gt;</code> works,
+                  <code>&lt;script&gt;</code> does not run.
+                </p>
+              </>
+            ) : redirect.html.trim() ? (
+              <p className="section__hint">
+                Your HTML is saved and comes back when this is turned on again.
+              </p>
+            ) : null}
+          </div>
+        </>
       ) : null}
     </section>
   );

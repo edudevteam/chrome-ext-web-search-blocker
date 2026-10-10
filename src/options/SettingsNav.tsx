@@ -13,14 +13,15 @@ const ICONS: Record<SettingsPane, ReactNode> = {
   ),
   redirect: (
     <>
-      <circle cx="12" cy="12" r="9" />
-      <path d="m5.6 5.6 12.8 12.8" />
-    </>
-  ),
-  tab: (
-    <>
       <rect x="3" y="5" width="18" height="15" rx="2" />
       <path d="M3 10h18M8 5v5" />
+    </>
+  ),
+  // A favicon-style badge: a rounded tile with a sparkle mark.
+  tab: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <path d="M12 8c.4 2.6 1.4 3.6 4 4-2.6.4-3.6 1.4-4 4-.4-2.6-1.4-3.6-4-4 2.6-.4 3.6-1.4 4-4Z" />
     </>
   ),
   password: (

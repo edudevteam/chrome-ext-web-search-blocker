@@ -19,6 +19,11 @@ function normalizeRedirect(raw: unknown): RedirectSettings {
       ? (value.mode as RedirectMode)
       : DEFAULT_SETTINGS.redirect.mode,
     url: typeof value.url === 'string' ? value.url : '',
+    // Settings saved before the toggle existed used any non-empty markup.
+    customHtml:
+      typeof value.customHtml === 'boolean'
+        ? value.customHtml
+        : typeof value.html === 'string' && value.html.trim().length > 0,
     html: typeof value.html === 'string' ? value.html.slice(0, MAX_LANDING_HTML) : '',
   };
 }

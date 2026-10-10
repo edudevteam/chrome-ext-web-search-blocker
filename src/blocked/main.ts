@@ -21,7 +21,8 @@ async function render(): Promise<void> {
 
   const settings = await loadSettings().catch(() => null);
   if (settings) void applyTabAppearance(settings.tab);
-  const html = settings?.redirect.html?.trim() || DEFAULT_LANDING_HTML;
+  const html =
+    (settings?.redirect.customHtml && settings.redirect.html.trim()) || DEFAULT_LANDING_HTML;
 
   // Assigning innerHTML on an extension page does not execute <script>, and the
   // page's CSP blocks inline handlers — custom markup is styling only.

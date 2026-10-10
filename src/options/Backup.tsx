@@ -7,6 +7,19 @@ interface BackupProps {
   update: (patch: Partial<Settings>) => void;
 }
 
+const STARTER_LISTS = [
+  {
+    name: 'Adult content starter',
+    hint: 'Blocks common adult keywords and sites.',
+    url: 'https://raw.githubusercontent.com/edudevteam/chrome-ext-web-search-blocker/refs/heads/main/templates/adult-content-starter.json',
+  },
+  {
+    name: 'STEM whitelist sample',
+    hint: 'Fills the allowed-sites list with a few STEM sites. Turn the whitelist on to use it.',
+    url: 'https://raw.githubusercontent.com/edudevteam/chrome-ext-web-search-blocker/refs/heads/main/templates/whitelist-stem-sample.json',
+  },
+];
+
 interface RuleFile {
   keywords: string[];
   sites: string[];
@@ -129,10 +142,10 @@ export function Backup({ settings, update }: BackupProps) {
     }
   };
 
-  const importUrl = () => {
+  const importUrl = (address: string) => {
     let target: URL;
     try {
-      target = new URL(url.trim());
+      target = new URL(address.trim());
       if (target.protocol !== 'https:' && target.protocol !== 'http:') throw new Error();
     } catch {
       setNote({ kind: 'error', text: 'Enter a full http:// or https:// address.' });
@@ -168,7 +181,7 @@ export function Backup({ settings, update }: BackupProps) {
 
   return (
     <div className="field">
-      <strong>Back up your rules</strong>
+      <strong className="backup__heading backup__heading--export">Back up your rules</strong>
       <p className="section__hint">
         Rules survive rebuilding and reloading the extension, but they are tied to the
         extension&rsquo;s identity — removing it and adding it back from a different folder
@@ -180,6 +193,10 @@ export function Backup({ settings, update }: BackupProps) {
         </button>
       </div>
 
+      <hr className="backup__rule" />
+
+      <strong className="backup__heading backup__heading--import">Import rules</strong>
+      <p className="section__hint">Choose how imported rules combine with the ones you have.</p>
       <div className="modes backup__modes">
         <label className="mode">
           <input
@@ -209,6 +226,7 @@ export function Backup({ settings, update }: BackupProps) {
         </label>
       </div>
 
+      <span className="backup__label">From a file</span>
       <div className="backup__actions">
         <button type="button" onClick={() => fileInput.current?.click()}>
           Import from file
@@ -226,11 +244,12 @@ export function Backup({ settings, update }: BackupProps) {
         />
       </div>
 
+      <span className="backup__label">From a URL</span>
       <form
         className="backup__actions backup__url"
         onSubmit={(event) => {
           event.preventDefault();
-          importUrl();
+          importUrl(url);
         }}
       >
         <input
@@ -249,6 +268,28 @@ export function Backup({ settings, update }: BackupProps) {
       <p className="section__hint">
         The URL must point to a JSON export. Chrome will ask once for permission to read that site.
       </p>
+
+      <hr className="backup__rule" />
+
+      <strong className="backup__heading backup__heading--starter">Starter lists</strong>
+      <p className="section__hint">
+        Ready-made lists to get you going. They use the import choice above.
+      </p>
+      <ul className="backup__starters">
+        {STARTER_LISTS.map((list) => (
+          <li key={list.url} className="backup__starter">
+            <span className="mode__body">
+              <span className="mode__label">{list.name}</span>
+              <span className="mode__hint">{list.hint}</span>
+            </span>
+            <span className="backup__actions">
+              <button type="button" disabled={loading} onClick={() => importUrl(list.url)}>
+                {mode === 'replace' ? 'Replace with this' : 'Add these'}
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
       {note ? <p className={`backup__note backup__note--${note.kind}`}>{note.text}</p> : null}
     </div>
   );
