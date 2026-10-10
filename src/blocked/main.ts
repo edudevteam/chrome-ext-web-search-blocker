@@ -120,7 +120,12 @@ function renderAllowed(
 }
 
 function allowedSites(settings: Settings): string[] {
-  const rules = compileRules(settings);
+  const { redirect, whitelist } = settings;
+  // Custom HTML can list the sites as shortcuts without the whitelist enforcing them.
+  const listAnyway = redirect.customHtml && redirect.html.trim() && redirect.showAllowedSites;
+  const rules = compileRules(
+    listAnyway ? { ...settings, whitelist: { ...whitelist, enabled: true } } : settings,
+  );
   if (!rules.whitelist) return [];
 
   // Hide entries the blocklist would bounce straight back here.

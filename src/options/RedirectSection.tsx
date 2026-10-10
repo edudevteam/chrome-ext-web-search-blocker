@@ -126,6 +126,16 @@ export function RedirectSection({ settings, update }: RedirectSectionProps) {
                 >
                   Open editor with live preview
                 </button>
+                <Toggle
+                  checked={redirect.showAllowedSites}
+                  onChange={(showAllowedSites) => patch({ showAllowedSites })}
+                  label="Show allowed sites with whitelist mode off"
+                  hint={
+                    settings.whitelist.enabled
+                      ? 'Whitelist mode is on, so your allowed sites are already listed.'
+                      : 'Lists your allowed sites as shortcuts on the landing and new tab pages, without blocking anything else.'
+                  }
+                />
                 <p className="section__hint">
                   An element with <code>id="wcb-quote"</code> is filled with a rotating phrase;
                   leave it out for a static page. <code>&lt;style&gt;</code> works,

@@ -246,10 +246,11 @@ export function Editor() {
                 Your allowed list is empty, so the preview uses sample sites (
                 {SAMPLE_SITES.join(', ')}).
               </p>
-            ) : !settings.whitelist.enabled ? (
+            ) : !settings.whitelist.enabled && !redirect.showAllowedSites ? (
               <p className="editor__inserts-note">
-                The preview shows your allowed sites, but blocked pages only list them once
-                whitelist mode is on.
+                The preview shows your allowed sites, but blocked pages only list them with
+                whitelist mode on, or with &ldquo;Show allowed sites with whitelist mode
+                off&rdquo; turned on in settings.
               </p>
             ) : null}
           </div>

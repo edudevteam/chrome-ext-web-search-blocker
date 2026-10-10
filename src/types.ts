@@ -58,6 +58,8 @@ export interface RedirectSettings {
   customHtml: boolean;
   /** Landing page markup. Empty means the built-in template. */
   html: string;
+  /** List the allowed sites in custom HTML even while the whitelist is off. */
+  showAllowedSites: boolean;
 }
 
 /** Keeps the whole settings object inside chrome.storage.sync's 8KB item cap. */
@@ -68,7 +70,7 @@ export const DEFAULT_SETTINGS: Settings = {
   types: { all: true, images: true, news: true, videos: true, maps: true, goggles: true },
   keywords: [],
   sites: [],
-  redirect: { mode: 'landing', url: '', customHtml: false, html: '' },
+  redirect: { mode: 'landing', url: '', customHtml: false, html: '', showAllowedSites: false },
   hidePreviewStrip: true,
   whitelist: { enabled: false, sites: [] },
   tab: { customTitle: false, title: '', customIcon: false },

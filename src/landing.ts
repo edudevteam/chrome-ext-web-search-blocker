@@ -1,42 +1,38 @@
 import type { Saying } from './sayings';
 
-/** King James Version — public domain. Replaced by any sayings you upload. */
+/**
+ * English Standard Version. Replaced by any sayings you upload.
+ *
+ * Crossway permits quoting up to 500 verses without written permission, provided
+ * the ESV is credited — hence "(ESV)" on every reference and the full copyright
+ * notice in the README.
+ */
 export const PROVERBS: Saying[] = [
   {
-    text: 'Trust in the LORD with all thine heart; and lean not unto thine own understanding.',
-    ref: 'Proverbs 3:5',
+    text: 'Keep your heart with all vigilance, for from it flow the springs of life.',
+    ref: 'Proverbs 4:23 (ESV)',
   },
   {
-    text: 'Keep thy heart with all diligence; for out of it are the issues of life.',
-    ref: 'Proverbs 4:23',
+    text: 'Can a man carry fire next to his chest and his clothes not be burned?',
+    ref: 'Proverbs 6:27 (ESV)',
   },
   {
-    text: 'Can a man take fire in his bosom, and his clothes not be burned?',
-    ref: 'Proverbs 6:27',
-  },
-  {
-    text: 'The way of a fool is right in his own eyes: but he that hearkeneth unto counsel is wise.',
-    ref: 'Proverbs 12:15',
+    text: 'The way of a fool is right in his own eyes, but a wise man listens to advice.',
+    ref: 'Proverbs 12:15 (ESV)',
   },
   {
     text:
-      'He that is slow to anger is better than the mighty; and he that ruleth his spirit ' +
-      'than he that taketh a city.',
-    ref: 'Proverbs 16:32',
+      'Whoever is slow to anger is better than the mighty, and he who rules his spirit ' +
+      'than he who takes a city.',
+    ref: 'Proverbs 16:32 (ESV)',
   },
   {
-    text: 'The name of the LORD is a strong tower: the righteous runneth into it, and is safe.',
-    ref: 'Proverbs 18:10',
+    text: 'Whoever keeps his mouth and his tongue keeps himself out of trouble.',
+    ref: 'Proverbs 21:23 (ESV)',
   },
   {
-    text: 'Whoso keepeth his mouth and his tongue keepeth his soul from troubles.',
-    ref: 'Proverbs 21:23',
-  },
-  {
-    text:
-      'He that hath no rule over his own spirit is like a city that is broken down, ' +
-      'and without walls.',
-    ref: 'Proverbs 25:28',
+    text: 'A man without self-control is like a city broken into and left without walls.',
+    ref: 'Proverbs 25:28 (ESV)',
   },
 ];
 

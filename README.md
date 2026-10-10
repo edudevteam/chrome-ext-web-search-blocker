@@ -160,11 +160,14 @@ assigning markup this way never executes scripts, and the page's CSP blocks inli
 handlers — so treat it as styling only. Markup is capped at 6000 characters to stay
 inside `chrome.storage.sync`'s per-item limit.
 
-The eight verses are King James Version, which is public domain. **Preview landing
-page** opens it in a tab.
+The six built-in verses are from the English Standard Version, each credited
+"(ESV)" (see [Scripture copyright](#scripture-copyright)). **Preview landing page**
+opens it in a tab.
 
 With the whitelist on, the landing page also lists the sites you can still go to:
 in an element with `id="wcb-allowed"` if the markup has one, otherwise below it.
+**Show allowed sites with whitelist mode off** lists them in custom HTML anyway, as
+shortcuts, without blocking every other site.
 
 To design the site cards yourself, add a `<template id="wcb-site">`. It is repeated
 once per allowed site, in its own place, with these placeholders filled into text
@@ -486,3 +489,9 @@ Google is matched on `https://*.google.com/*` only. For a country domain
   best-effort and works on the list rail, not on map pins.
 - Google has no Goggles tab, so that switch only affects Brave.
 - `chrome.storage.sync` caps an item at ~8 KB — a few hundred rules.
+
+## Scripture copyright
+
+Scripture quotations are from the ESV® Bible (The Holy Bible, English Standard
+Version®), © 2001 by Crossway, a publishing ministry of Good News Publishers. Used by
+permission. All rights reserved.

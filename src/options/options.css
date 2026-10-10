@@ -486,8 +486,9 @@ body {
 /* ---------- browser tab ---------- */
 
 .toggle + .text-input,
-.toggle + .html-input {
-  margin-top: 10px;
+.toggle + .html-input,
+.preview + .toggle {
+  margin-top: 14px;
 }
 
 .tab-icon-grid {

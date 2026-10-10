@@ -13,7 +13,7 @@ beforeAll(() => {
 });
 
 function settings(sites: string[], mode: RedirectMode, url = ''): Settings {
-  return { ...DEFAULT_SETTINGS, sites, redirect: { mode, url, customHtml: false, html: '' } };
+  return { ...DEFAULT_SETTINGS, sites, redirect: { ...DEFAULT_SETTINGS.redirect, mode, url } };
 }
 
 const rulesFor = (sites: string[]) => compileRules(settings(sites, 'landing'));

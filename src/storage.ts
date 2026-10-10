@@ -25,6 +25,7 @@ function normalizeRedirect(raw: unknown): RedirectSettings {
         ? value.customHtml
         : typeof value.html === 'string' && value.html.trim().length > 0,
     html: typeof value.html === 'string' ? value.html.slice(0, MAX_LANDING_HTML) : '',
+    showAllowedSites: value.showAllowedSites === true,
   };
 }
 
