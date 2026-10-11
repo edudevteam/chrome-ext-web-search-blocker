@@ -2,12 +2,14 @@ import { isExtensionsPage, isUnlocked, loadLock, onLockChanged } from './lock';
 import { compileRules, type CompiledRules } from './matcher';
 import { redirectTarget, shouldRedirect } from './redirect';
 import { loadSettings, onSettingsChanged, saveSettings } from './storage';
+import { blockedSearchTarget, compileStreamRules, type StreamRules } from './stream/sites';
 import { DEFAULT_SETTINGS, type Message, type Settings } from './types';
 
 const BADGE_COLOR = '#ef4444';
 
 let settings: Settings = DEFAULT_SETTINGS;
 let rules: CompiledRules = compileRules(DEFAULT_SETTINGS);
+let streamRules: StreamRules = compileStreamRules(DEFAULT_SETTINGS.stream);
 let ready: Promise<void> | null = null;
 
 /**
@@ -18,6 +20,7 @@ function whenReady(): Promise<void> {
   ready ??= loadSettings().then((loaded) => {
     settings = loaded;
     rules = compileRules(loaded);
+    streamRules = compileStreamRules(loaded.stream);
   });
   return ready;
 }
@@ -25,6 +28,7 @@ function whenReady(): Promise<void> {
 onSettingsChanged((next) => {
   settings = next;
   rules = compileRules(next);
+  streamRules = compileStreamRules(next.stream);
   ready = Promise.resolve();
 });
 
@@ -65,7 +69,6 @@ async function handleNavigation(details: NavigationDetails) {
   if (details.frameId !== 0) return; // top-level navigations only
   await whenReady();
   if (!settings.enabled) return;
-  if (settings.redirect.mode === 'off' && !rules.whitelist) return;
 
   let url: URL;
   try {
@@ -73,9 +76,11 @@ async function handleNavigation(details: NavigationDetails) {
   } catch {
     return;
   }
-  if (!shouldRedirect(url, rules)) return;
 
-  const target = redirectTarget(settings, rules);
+  // A search on a streaming site for a blocked stream term goes back to the
+  // site's home page, before any of its results can load.
+  const target =
+    siteTarget(url) || (settings.stream.enabled ? blockedSearchTarget(url, streamRules) : null);
   if (!target) return;
 
   try {
@@ -83,6 +88,13 @@ async function handleNavigation(details: NavigationDetails) {
   } catch {
     /* tab closed mid-navigation */
   }
+}
+
+/** Where the site-blocking rules send this address, if anywhere. */
+function siteTarget(url: URL): string | null {
+  if (settings.redirect.mode === 'off' && !rules.whitelist) return null;
+  if (!shouldRedirect(url, rules)) return null;
+  return redirectTarget(settings, rules);
 }
 
 chrome.webNavigation.onBeforeNavigate.addListener((details) => void handleNavigation(details));

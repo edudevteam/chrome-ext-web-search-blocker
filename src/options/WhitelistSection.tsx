@@ -38,8 +38,12 @@ export function WhitelistSection({ settings, update }: WhitelistSectionProps) {
         placeholder="example.com or *.edu"
         noun="site"
         items={sites}
-        onChange={(next) => update({ whitelist: { ...whitelist, sites: [...next, ...pages] } })}
-        normalize={normalizeSite}
+        // A pasted URL with a path keeps it and moves to the sub-pages list, rather
+        // than being cut back to its domain and allowing the whole site.
+        onChange={(next) =>
+          update({ whitelist: { ...whitelist, sites: [...new Set([...next, ...pages])] } })
+        }
+        normalize={(raw) => normalizeSite(raw, true)}
       />
       <RuleList
         title="Allowed sub pages and channels"

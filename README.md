@@ -8,16 +8,25 @@ keeps the web limited to what you choose to see.
 - **Search result filtering** — hides results matching your blocked keywords and
   sites on **Brave Search** and **Google**, across every result tab: **All, Images,
   News, Videos, Maps, Goggles**. Every tab type is blocked by default; each has its
-  own switch, plus a master on/off.
+  own switch, plus a master on/off. Keywords can be plain text or regex, and sites
+  take `*` wildcards.
 - **Site blocking** — opening a blocked site sends the tab to a calm landing page or
   an address of your choice.
+- **Sub pages and channels** — block (or allow) one part of a site, such as a single
+  YouTube channel (`youtube.com/@name`) or video, and leave the rest of it open.
 - **Whitelist mode** — flip it on and *only* the sites you allow can be opened.
 - **Password lock** — protects the popup and settings, and can guard the browser's
   extensions page so the blocker can't be switched off on impulse.
-- **New tab page** — the same quiet landing page, with rotating sayings and shortcuts
+- **New tab page** — the same quiet landing page, with rotating phrases and shortcuts
   to your allowed sites.
-- **Your own sayings and tab look** — upload sayings to replace the built-in
-  proverbs, and set a custom tab title and icon.
+- **A landing page you can make your own** — edit the rotating phrases in place or
+  upload your own, write custom HTML in a full-tab editor with a live preview and
+  ready-made site-card layouts, and set a custom tab title and icon.
+- **Backup and starter lists** — export your rules, import them from a file or a URL
+  (adding to or replacing what you have), or start from a ready-made list.
+- **Popup and diagnostics** — the popup shows what is blocked on the current search
+  tab; the settings page checks private-window access and which tabs the blocker is
+  running in.
 
 Nothing leaves your browser — see [PRIVACY.md](PRIVACY.md).
 
@@ -115,7 +124,8 @@ Blocked sites are not only filtered out of search results — navigating to one 
 intercepted too, using the same rules and the same wildcards. Three options on the
 settings page:
 
-- **Show a landing page** (default) — a quiet page with a rotating proverb.
+- **Show a landing page** (default) — a quiet page with a rotating phrase.
+  **Preview landing page** opens it in a tab.
 - **Send me somewhere else** — any address you choose. A bare domain gets `https://`.
 - **Do nothing** — filter search results only.
 
@@ -138,6 +148,9 @@ have no effect.
 
 - Entries use the blocked-sites syntax: `example.com` covers its subdomains, and `*`
   matches part of a host (`*.edu`).
+- **Allowed sub pages and channels** narrows an entry to part of a site:
+  `youtube.com/@name` allows that channel's pages and nothing else on YouTube. See
+  [*Sub pages and channels*](#sub-pages-and-channels).
 - Search engines are **not** exempt here. Add `google.com` or `search.brave.com` if you
   still want to search.
 - The blocked lists still apply on top. A site on both lists is blocked.
@@ -153,16 +166,27 @@ but never switches the whitelist on.
 
 ### Custom landing HTML
 
-**Customise HTML** on the settings page replaces the built-in template. An element
-with `id="wcb-quote"` is filled with a rotating proverb (twelve seconds each, shuffled
-per visit); leave it out for a static page. `<style>` works. `<script>` does not run —
-assigning markup this way never executes scripts, and the page's CSP blocks inline
-handlers — so treat it as styling only. Markup is capped at 6000 characters to stay
-inside `chrome.storage.sync`'s per-item limit.
+**Use custom HTML** (Settings → *Opening a blocked site*) replaces the built-in
+template. An element with `id="wcb-quote"` is filled with a rotating phrase (twelve
+seconds each, shuffled per visit); leave it out for a static page. `<style>` works.
+`<script>` does not run — assigning markup this way never executes scripts, and the
+page's CSP blocks inline handlers — so treat it as styling only. Markup is capped at
+6000 characters to stay inside `chrome.storage.sync`'s per-item limit; a counter shows
+how much is used, and **Reset to default** starts over from the built-in template.
+Switching custom HTML off keeps your markup saved for next time.
 
-The six built-in verses are from the English Standard Version, each credited
-"(ESV)" (see [Scripture copyright](#scripture-copyright)). **Preview landing page**
-opens it in a tab.
+**Open editor with live preview** opens a full-tab editor (`editor.html`) with the
+markup on one side and the landing page re-rendering on the other as you type. Insert
+buttons add the pieces the page understands:
+
+| Button | Inserts |
+| --- | --- |
+| *Rotating phrase* | the `wcb-quote` slot |
+| *Allowed sites (built-in cards)* | the `wcb-allowed` slot, filled with the standard cards |
+| *Image only*, *Image + title*, *Text links* | a ready-made `<template id="wcb-site">` site layout |
+
+With no allowed sites yet, the preview fills site layouts with sample sites so there
+is something to look at. The editor is also where **Site images** are set (below).
 
 With the whitelist on, the landing page also lists the sites you can still go to:
 in an element with `id="wcb-allowed"` if the markup has one, otherwise below it.
@@ -196,61 +220,88 @@ Site images are http(s) addresses, one per allowed site, kept in
 `chrome.storage.local` (not synced, and not part of export/import) so they don't
 count against the custom HTML's space. They load from any host: the whitelist only
 checks pages you open, not the images a page shows. Each one does request the image
-from its host whenever the landing page opens. **Open editor with live preview** opens a full-tab editor with insert
-buttons for these snippets and a live preview beside it.
+from its host whenever the landing page opens.
 
-### Your own sayings
+### Rotating phrases
 
-**Upload sayings** replaces the proverbs with your own list (up to 1000), kept in
-`chrome.storage.local`. Two formats:
+The landing and new tab pages show one phrase at a time, in random order. The
+built-in set is six verses from the English Standard Version, each credited "(ESV)"
+(see [Scripture copyright](#scripture-copyright)).
 
-- **Plain text** — one saying per line, with an optional attribution after ` — `,
+**Rotating Phrases** (Settings → *Opening a blocked site*) lists every phrase as an
+editable row — the text and an optional attribution — with **Add phrase** and a
+remove button per row. Editing any of them switches to your own list, saved as you
+type in `chrome.storage.local`; **Use built-in phrases** goes back. Up to 1000.
+
+**Upload & replace** swaps the list for a file's phrases, and **Upload & append** adds
+them to the end. Two formats:
+
+- **Plain text** — one phrase per line, with an optional attribution after ` — `,
   ` -- ` or ` | `, e.g. `Stay the course — Grandpa`.
 - **JSON** — an array of strings or of `{ "text", "ref" }` objects, bare or under a
   `"sayings"` key.
-
-**Use proverbs** goes back to the built-in set.
 
 ### New tab page
 
 The extension replaces the browser's new tab page with the landing page, minus the
 "Not this way" heading, since you chose to come here. It shows the same rotating
-sayings and, with the whitelist on, your allowed sites as shortcuts.
+phrases, your custom HTML if you use it, and, with the whitelist on, your allowed
+sites as shortcuts.
 
 ### Browser tab title and icon
 
 **Browser tab** on the settings page sets a custom title and favicon for the landing
-and new tab pages. Pick a preset icon (globe, document, spreadsheet, …) or upload an
-image, which is scaled to 64 px and kept in `chrome.storage.local`. Both are off by
-default.
+and new tab pages, replacing "Not this way" and "New Tab" in the tab strip. Pick one
+of the built-in icons (globe, document, spreadsheet, slides, mail, calendar, folder,
+book, school, chart and more) or upload any image, which is scaled to 64 px and kept
+in `chrome.storage.local`. Both are off by default.
 
 ### The permissions this needs
 
 | Permission | Why |
 | --- | --- |
-| `storage` | Your rules, password hash, sayings and tab icon. |
+| `storage` | Your rules, password hash, phrases, site images and tab icon. |
 | `webNavigation` | Sees top-level navigations so a blocked (or non-whitelisted) site can be redirected. It reads only the URL. |
 | `tabs` | Reads tab URLs for the extensions-page guard (webNavigation never fires for `chrome://` pages) and finds search tabs for the popup and diagnostics. |
 | `favicon` | Shows allowed sites' icons through `{{favicon}}` in a custom landing page, read from the browser's own icon cache, so no request leaves the browser. |
 
-There is no broad host permission. The content script only runs on Brave Search and
-Google, and the navigation listener gets URLs from `webNavigation` without needing
-host access.
+| Optional host access | Asked for one site at a time, only when you import rules from a URL (a starter list, for one), so the file can be fetched. |
+
+There is no broad host permission granted up front. The content script only runs on
+Brave Search and Google, and the navigation listener gets URLs from `webNavigation`
+without needing host access.
 
 ## Settings page
 
 Rules live on a full settings page — right-click the toolbar icon → **Options**, or
-open the popup and hit **Settings & diagnostics**. The popup carries the same
-controls for quick edits; both write to the same storage and stay in sync while open.
+open the popup and hit **Settings & diagnostics ↗**.
 
-The header holds two switches: **Blocking** (the master switch) and **Whitelist**.
-Below them, three tabs:
+The header holds two switches: **Blocking** (the master switch) and **Whitelist**,
+with a rule count and the build stamp. Below them, three tabs:
 
-- **Blocked** — search types, blocked keywords and blocked sites. Hidden while the
-  whitelist is on. Those rules keep applying; the tab just steps aside.
-- **Whitelisted** — the allowed-sites list.
-- **Settings** — diagnostics, what opening a blocked site does, the password, and
-  export / import.
+- **Blocked** — blocked keywords, blocked sites, and blocked sub pages and channels.
+  Hidden while the whitelist is on. Those rules keep applying; the tab just steps
+  aside.
+- **Whitelisted** — allowed sites, and allowed sub pages and channels.
+- **Settings** — a side menu of panes:
+  - **Diagnostics** — see below.
+  - **Search types** — a switch per result tab (All, Images, News, Videos, Maps,
+    Goggles), and *Hide recommended images in the preview*.
+  - **Opening a blocked site** — the redirect choice, the landing page format,
+    rotating phrases and custom HTML.
+  - **Browser tab** — custom tab title and icon.
+  - **Password** — the lock and the extensions-page guard.
+  - **Backup** — export, import and starter lists.
+
+### The popup
+
+The toolbar popup is for quick edits on the spot. It shows whether the current tab is
+a supported search page and, if so, the engine, the tab type and how many results are
+hidden there (or that blocking is paused for this tab type or switched off). Below
+that are the same keyword, site and sub-page lists as the **Blocked** tab. The popup
+and the settings page write to the same storage and stay in sync while both are open.
+
+### Diagnostics
 
 The Settings tab opens with a **Diagnostics** panel that answers the questions you
 cannot answer by looking at a search page:
@@ -262,8 +313,6 @@ cannot answer by looking at a search page:
 - **Search tabs open now** — every open tab the blocker should be running on, each
   marked *Private* or not, reporting the tab type and how many results it has hidden,
   or *not running — reload this tab* when no content script is present.
-
-It also carries **Export / Import** for your rules — see *Keeping your rules* above.
 
 ### Private / Incognito windows
 
@@ -308,7 +357,9 @@ force-installed extension has no Remove or disable switch at all. Add
 | `/\bnft\b/` | regex, delimited by slashes (`/pattern/flags`, default `i`) |
 
 **Sites** match the hostname of any link inside a result. `example.com` also blocks
-`news.example.com`. Paste a full URL and it is trimmed to the bare domain.
+`news.example.com`. Paste a full URL and it loses its scheme and `www.`; if it has a
+path (`youtube.com/@name`), it is filed under sub pages and channels instead of
+blocking the whole site.
 
 Use `*` to match part of a hostname:
 
@@ -326,8 +377,9 @@ blocking every result on the page.
 Watch the substring form: `*sex*` also blocks `essex.gov.uk` and `sussex.ac.uk`.
 Anchor one end (`sex*`) when you mean the start of the hostname.
 
-**Sub pages and channels.** The *Blocked sub pages and channels* list, under
-blocked sites, keeps the path, so a rule covers one part of a site rather than all
+### Sub pages and channels
+
+The *Blocked sub pages and channels* list, under blocked sites, keeps the path, so a rule covers one part of a site rather than all
 of it. *Allowed sub pages and channels* does the same for the whitelist. Both are
 stored in the same list as their sites; an entry with a path is shown in the sub-pages
 section.
@@ -343,9 +395,12 @@ including in-app navigation on single-page sites like YouTube, caught through
 search result linking under the path is hidden. A video's address does not name its
 channel, so `youtube.com/@name` blocks the channel's pages, not its videos.
 
+An entry typed into a sub-pages list without a path is not added — a whole site
+belongs in the sites list above it.
+
 ### Your lists stay out of sight
 
-Both rule lists are **collapsed by default, every time you open the popup or the
+Every rule list is **collapsed by default, every time you open the popup or the
 settings page**. You see a count — "14 keywords hidden" — and nothing else. Reading
 back what you blocked is its own reminder of the thing you were avoiding, so the open
 state is deliberately not remembered.
@@ -374,11 +429,32 @@ What *does* lose them is anything that changes that identity: removing the exten
 and adding it back from a different folder, or moving the project. Two ways to be
 safe:
 
-- **Export** from the settings page before doing any of that, and **Import** after.
-  Importing merges — it only ever adds rules, never removes.
+- **Export** from the settings page before doing any of that, and **Import** after
+  (see *Backup and import* below).
 - To pin the identity permanently, add a `"key"` field (a base64 SPKI public key) to
   `public/manifest.json`. The extension ID then follows the key rather than the path.
   Note that adding it *changes* the ID once, so export your rules first.
+
+### Backup and import
+
+**Settings → Backup** handles your rule lists: keywords, blocked sites (sub pages
+included) and allowed sites.
+
+- **Export rules** downloads `content-blocker-rules-<date>.json` with `keywords`,
+  `sites` and `allowedSites`.
+- **Import** takes either that file or a full settings export, and comes in two
+  modes: **Import (append to existing)** adds only what is new and never removes
+  anything; **Import (replace all)** makes your lists exactly what is imported, after
+  a confirmation that says how many rules will go.
+- **From a file** or **from a URL** — the URL must serve a JSON export. Chrome asks
+  once for permission to read that site.
+- **Starter lists** are ready-made files kept in [`templates/`](templates/) and
+  imported by URL with the mode chosen above: *Adult content starter* (common adult
+  keywords and sites) and *STEM whitelist sample* (a few allowed STEM sites).
+
+Importing never switches the whitelist on; it only fills the list. Settings such as
+the redirect, custom HTML, password, phrases, site images and tab icon are not part
+of the export.
 
 ## What a blocked result looks like
 
@@ -479,13 +555,16 @@ src/popup/               compact popup (index.html)
 src/options/             full settings page + diagnostics (options.html)
 src/blocked/             landing page shown instead of a blocked site (blocked.html)
 newtab.html              new tab override, reusing src/blocked/ as a home page
-src/landing.ts           default template + the proverbs it rotates
-src/sayings.ts           parsing and storage for uploaded sayings
+src/editor/              full-tab landing HTML editor with live preview (editor.html)
+src/landing.ts           default template + the phrases it rotates
+src/sayings.ts           parsing and storage for your own phrases
+src/siteImages.ts        per-site images for custom landing layouts
 src/tabIcon.ts           custom tab title and favicon (+ tabIconPresets.ts)
 src/lock.ts              password hash, unlock window, extensions-page check
 src/redirect.ts          where a blocked navigation is sent, and when not to
 src/background.ts        service worker: badge counts, redirects, extensions guard
 scripts/generate-icons.mjs  renders the toolbar PNGs, no image dependencies
+templates/               starter lists offered under Settings → Backup
 ```
 
 Two Vite builds produce `dist/`: [`vite.config.ts`](vite.config.ts) for the popup,

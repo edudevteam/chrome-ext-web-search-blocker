@@ -6,6 +6,7 @@ import {
   type RedirectMode,
   type RedirectSettings,
   type Settings,
+  type StreamSettings,
   type TabSettings,
   type WhitelistSettings,
 } from './types';
@@ -46,6 +47,15 @@ function normalizeTab(raw: unknown): TabSettings {
   };
 }
 
+function normalizeStream(raw: unknown): StreamSettings {
+  const value = (raw ?? {}) as Partial<StreamSettings>;
+  return {
+    enabled: value.enabled === true,
+    channels: Array.isArray(value.channels) ? value.channels.filter((c) => typeof c === 'string') : [],
+    keywords: Array.isArray(value.keywords) ? value.keywords.filter((k) => typeof k === 'string') : [],
+  };
+}
+
 const KEY = 'settings';
 const area = chrome.storage.sync;
 
@@ -68,6 +78,7 @@ function normalize(raw: unknown): Settings {
         : DEFAULT_SETTINGS.hidePreviewStrip,
     whitelist: normalizeWhitelist(value.whitelist),
     tab: normalizeTab(value.tab),
+    stream: normalizeStream(value.stream),
   };
 }
 

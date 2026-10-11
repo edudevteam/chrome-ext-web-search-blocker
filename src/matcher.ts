@@ -29,7 +29,7 @@ export interface CompiledRules {
 
 const REGEX_SYNTAX = /^\/(.+)\/([gimsuy]*)$/;
 
-function compileKeyword(raw: string): KeywordRule | null {
+export function compileKeyword(raw: string): KeywordRule | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 

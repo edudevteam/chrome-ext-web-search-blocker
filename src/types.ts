@@ -30,6 +30,17 @@ export interface Settings {
   whitelist: WhitelistSettings;
   /** How the landing and new tab pages present themselves in the tab strip. */
   tab: TabSettings;
+  /** Hides videos on streaming sites (YouTube) by channel, title or description. */
+  stream: StreamSettings;
+}
+
+export interface StreamSettings {
+  /** Shows the Streams tab and runs the filter on streaming sites. */
+  enabled: boolean;
+  /** Matched against the channel name. Plain text ignores case and spaces; /re/ is a regex. */
+  channels: string[];
+  /** Matched against the video title and description. Same syntax as `channels`. */
+  keywords: string[];
 }
 
 export interface TabSettings {
@@ -74,6 +85,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hidePreviewStrip: true,
   whitelist: { enabled: false, sites: [] },
   tab: { customTitle: false, title: '', customIcon: false },
+  stream: { enabled: false, channels: [], keywords: [] },
 };
 
 /** content script -> popup */

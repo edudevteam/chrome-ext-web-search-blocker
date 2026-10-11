@@ -8,14 +8,16 @@ import { Diagnostics } from './Diagnostics';
 import { PasswordSection } from './PasswordSection';
 import { RedirectSection } from './RedirectSection';
 import { SettingsNav, type SettingsPane } from './SettingsNav';
+import { StreamRulesSection, StreamToggleSection } from './StreamSection';
 import { TabSection } from './TabSection';
 import { WhitelistSection } from './WhitelistSection';
 
-type Tab = 'blocked' | 'whitelisted' | 'settings';
+type Tab = 'blocked' | 'whitelisted' | 'streams' | 'settings';
 
 const TAB_LABELS: Record<Tab, string> = {
   blocked: 'Blocked',
   whitelisted: 'Whitelisted',
+  streams: 'Streams',
   settings: 'Settings',
 };
 
@@ -28,7 +30,13 @@ export function Options() {
 
   const whitelisting = settings.whitelist.enabled;
   // The whitelist replaces the blocked lists as what you manage, so their tab goes.
-  const tabs: Tab[] = whitelisting ? ['whitelisted', 'settings'] : ['blocked', 'whitelisted', 'settings'];
+  const tabs: Tab[] = [
+    ...(whitelisting ? [] : ['blocked' as const]),
+    'whitelisted',
+    // Only there once switched on under Settings → Streams.
+    ...(settings.stream.enabled ? ['streams' as const] : []),
+    'settings',
+  ];
   const tab = chosen && tabs.includes(chosen) ? chosen : tabs[0];
 
   const ruleCount = settings.keywords.length + settings.sites.length;
@@ -93,6 +101,12 @@ export function Options() {
         </div>
       ) : null}
 
+      {tab === 'streams' ? (
+        <div className="card">
+          <StreamRulesSection settings={settings} update={update} />
+        </div>
+      ) : null}
+
       {tab === 'settings' ? (
         <div className="settings">
           <SettingsNav active={pane} onSelect={setPane} />
@@ -101,6 +115,11 @@ export function Options() {
             {pane === 'search' ? (
               <div className="card">
                 <SearchTypeSection settings={settings} update={update} />
+              </div>
+            ) : null}
+            {pane === 'stream' ? (
+              <div className="card">
+                <StreamToggleSection settings={settings} update={update} />
               </div>
             ) : null}
             {pane === 'redirect' ? (

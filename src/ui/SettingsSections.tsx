@@ -64,12 +64,14 @@ export function RuleSections({ settings, update }: SectionProps) {
       />
       <RuleList
         title="Blocked sites"
-        hint="Domains include their subdomains. Use * to match part of a host — porn*, *hub.com, *sex*. Paste a full URL and it will be trimmed."
+        hint="Domains include their subdomains. Use * to match part of a host — porn*, *hub.com, *sex*. A pasted URL with a path is filed under sub pages and channels."
         placeholder="example.com or porn*"
         noun="site"
         items={sites}
-        onChange={(next) => update({ sites: [...next, ...pages] })}
-        normalize={normalizeSite}
+        // A pasted channel URL keeps its path and moves to the sub-pages list, rather
+        // than being cut back to its domain and blocking the whole site.
+        onChange={(next) => update({ sites: [...new Set([...next, ...pages])] })}
+        normalize={(raw) => normalizeSite(raw, true)}
       />
       <RuleList
         title="Blocked sub pages and channels"

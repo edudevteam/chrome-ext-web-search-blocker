@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Web Content Blocker",
-  "version": "1.2.19",
+  "version": "1.3.5",
   "description": "Hide search results matching your blocked keywords and sites — across All, Images, News, Videos, Maps and Goggles.",
   "permissions": ["storage", "webNavigation", "tabs", "favicon"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
@@ -42,6 +42,12 @@
     {
       "matches": ["https://search.brave.com/*", "https://*.google.com/*"],
       "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://www.youtube.com/*", "https://youtube.com/*"],
+      "js": ["stream.js"],
       "run_at": "document_start",
       "all_frames": false
     }

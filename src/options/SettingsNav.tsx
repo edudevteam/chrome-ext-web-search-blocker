@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react';
 
-export type SettingsPane = 'diagnostics' | 'search' | 'redirect' | 'tab' | 'password' | 'backup';
+export type SettingsPane =
+  | 'diagnostics'
+  | 'search'
+  | 'stream'
+  | 'redirect'
+  | 'tab'
+  | 'password'
+  | 'backup';
 
 // Stroke icons on a 24px grid; they inherit currentColor from the button.
 const ICONS: Record<SettingsPane, ReactNode> = {
@@ -9,6 +16,13 @@ const ICONS: Record<SettingsPane, ReactNode> = {
     <>
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-4-4" />
+    </>
+  ),
+  // A video player: a screen with a play triangle.
+  stream: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="m10 9 5 3-5 3Z" />
     </>
   ),
   redirect: (
@@ -41,6 +55,7 @@ const ICONS: Record<SettingsPane, ReactNode> = {
 export const SETTINGS_PANES: { id: SettingsPane; label: string }[] = [
   { id: 'diagnostics', label: 'Diagnostics' },
   { id: 'search', label: 'Search types' },
+  { id: 'stream', label: 'Streams' },
   { id: 'redirect', label: 'Opening a blocked site' },
   { id: 'tab', label: 'Browser tab' },
   { id: 'password', label: 'Password' },
