@@ -326,6 +326,23 @@ blocking every result on the page.
 Watch the substring form: `*sex*` also blocks `essex.gov.uk` and `sussex.ac.uk`.
 Anchor one end (`sex*`) when you mean the start of the hostname.
 
+**Sub pages and channels.** The *Blocked sub pages and channels* list, under
+blocked sites, keeps the path, so a rule covers one part of a site rather than all
+of it. *Allowed sub pages and channels* does the same for the whitelist. Both are
+stored in the same list as their sites; an entry with a path is shown in the sub-pages
+section.
+
+| Entry | Matches | Does not match |
+| --- | --- | --- |
+| `youtube.com/@mkbhd` | `youtube.com/@mkbhd`, `…/@mkbhd/videos`, `m.youtube.com/@mkbhd` | `youtube.com`, `youtube.com/@mkbhdclips` |
+| `youtube.com/watch?v=abc` | that video, with any other parameters | other videos |
+
+Paths and query values are compared case-insensitively. Opening a covered page —
+including in-app navigation on single-page sites like YouTube, caught through
+`webNavigation.onHistoryStateUpdated` — is redirected like any blocked site, and a
+search result linking under the path is hidden. A video's address does not name its
+channel, so `youtube.com/@name` blocks the channel's pages, not its videos.
+
 ### Your lists stay out of sight
 
 Both rule lists are **collapsed by default, every time you open the popup or the

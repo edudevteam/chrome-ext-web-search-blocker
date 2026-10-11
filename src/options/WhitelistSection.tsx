@@ -1,4 +1,4 @@
-import { normalizeSite } from '../matcher';
+import { isPageRule, normalizePage, normalizeSite } from '../matcher';
 import type { Settings } from '../types';
 import { RuleList } from '../ui/RuleList';
 
@@ -9,6 +9,9 @@ interface WhitelistSectionProps {
 
 export function WhitelistSection({ settings, update }: WhitelistSectionProps) {
   const { whitelist } = settings;
+  // Both lists live in `whitelist.sites`; an entry with a path belongs to the sub-pages one.
+  const sites = whitelist.sites.filter((site) => !isPageRule(site));
+  const pages = whitelist.sites.filter(isPageRule);
 
   return (
     <>
@@ -34,9 +37,18 @@ export function WhitelistSection({ settings, update }: WhitelistSectionProps) {
         hint="Domains include their subdomains, and * matches part of a host, as with blocked sites. Sites a page signs in or loads through (accounts.google.com, for one) may need adding too."
         placeholder="example.com or *.edu"
         noun="site"
-        items={whitelist.sites}
-        onChange={(sites) => update({ whitelist: { ...whitelist, sites } })}
+        items={sites}
+        onChange={(next) => update({ whitelist: { ...whitelist, sites: [...next, ...pages] } })}
         normalize={normalizeSite}
+      />
+      <RuleList
+        title="Allowed sub pages and channels"
+        hint="One part of a site, and every page below it. youtube.com/@name allows that channel's pages and nothing else on YouTube."
+        placeholder="youtube.com/@name or example.com/section"
+        noun="page"
+        items={pages}
+        onChange={(next) => update({ whitelist: { ...whitelist, sites: [...sites, ...next] } })}
+        normalize={normalizePage}
       />
     </>
   );

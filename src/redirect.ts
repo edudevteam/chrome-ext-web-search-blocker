@@ -16,10 +16,9 @@ export const LANDING_PAGE = 'blocked.html';
  */
 export function shouldRedirect(url: URL, rules: CompiledRules): boolean {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
-  const host = url.hostname.toLowerCase();
-  if (rules.whitelist && !rules.whitelist.some((rule) => rule.test(host))) return true;
+  if (rules.whitelist && !rules.whitelist.some((rule) => rule.testUrl(url))) return true;
   if (engineFor(url)) return false;
-  return rules.sites.some((rule) => rule.test(host));
+  return rules.sites.some((rule) => rule.testUrl(url));
 }
 
 /**

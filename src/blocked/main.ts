@@ -131,7 +131,12 @@ function allowedSites(settings: Settings): string[] {
   // Hide entries the blocklist would bounce straight back here.
   return rules.whitelist
     .map((rule) => rule.raw)
-    .filter((site) => site.includes('*') || !rules.sites.some((rule) => rule.test(site)));
+    .filter((site) => site.includes('*') || !rules.sites.some((rule) => rule.testUrl(siteUrl(site))));
+}
+
+/** An allowed entry as an address: `example.com/path` -> https://example.com/path. */
+function siteUrl(site: string): URL {
+  return new URL(`https://${site}`);
 }
 
 /**

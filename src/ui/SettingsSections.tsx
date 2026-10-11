@@ -1,4 +1,4 @@
-import { normalizeSite } from '../matcher';
+import { isPageRule, normalizePage, normalizeSite } from '../matcher';
 import { SEARCH_TYPES, SEARCH_TYPE_LABELS, type SearchType, type Settings } from '../types';
 import { RuleList } from './RuleList';
 import { Toggle } from './Toggle';
@@ -48,6 +48,10 @@ export function SearchTypeSection({ settings, update }: SectionProps) {
 }
 
 export function RuleSections({ settings, update }: SectionProps) {
+  // Both lists live in `sites`; an entry with a path belongs to the sub-pages one.
+  const sites = settings.sites.filter((site) => !isPageRule(site));
+  const pages = settings.sites.filter(isPageRule);
+
   return (
     <>
       <RuleList
@@ -63,9 +67,18 @@ export function RuleSections({ settings, update }: SectionProps) {
         hint="Domains include their subdomains. Use * to match part of a host — porn*, *hub.com, *sex*. Paste a full URL and it will be trimmed."
         placeholder="example.com or porn*"
         noun="site"
-        items={settings.sites}
-        onChange={(sites) => update({ sites })}
+        items={sites}
+        onChange={(next) => update({ sites: [...next, ...pages] })}
         normalize={normalizeSite}
+      />
+      <RuleList
+        title="Blocked sub pages and channels"
+        hint="One part of a site, and every page below it. youtube.com/@name blocks that channel's pages but leaves the rest of YouTube open; youtube.com/watch?v=… blocks one video."
+        placeholder="youtube.com/@name or example.com/section"
+        noun="page"
+        items={pages}
+        onChange={(next) => update({ sites: [...sites, ...next] })}
+        normalize={normalizePage}
       />
     </>
   );

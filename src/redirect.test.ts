@@ -32,6 +32,23 @@ describe('shouldRedirect', () => {
     expect(shouldRedirect(new URL('https://popcorn.com/'), rules)).toBe(false);
   });
 
+  it('redirects only under the path of a page-scoped rule', () => {
+    const rules = rulesFor(['youtube.com/@mkbhd']);
+    expect(shouldRedirect(new URL('https://www.youtube.com/@mkbhd'), rules)).toBe(true);
+    expect(shouldRedirect(new URL('https://www.youtube.com/@mkbhd/shorts'), rules)).toBe(true);
+    expect(shouldRedirect(new URL('https://www.youtube.com/'), rules)).toBe(false);
+    expect(shouldRedirect(new URL('https://www.youtube.com/@other'), rules)).toBe(false);
+  });
+
+  it('with the whitelist on, allows only under the path of a page-scoped entry', () => {
+    const rules = compileRules({
+      ...settings([], 'landing'),
+      whitelist: { enabled: true, sites: ['youtube.com/@mkbhd'] },
+    });
+    expect(shouldRedirect(new URL('https://www.youtube.com/@mkbhd/videos'), rules)).toBe(false);
+    expect(shouldRedirect(new URL('https://www.youtube.com/watch?v=1'), rules)).toBe(true);
+  });
+
   it('never redirects a search engine, even when its domain is blocked', () => {
     const rules = rulesFor(['google.com', 'brave.com']);
     expect(shouldRedirect(new URL('https://www.google.com/search?q=x'), rules)).toBe(false);

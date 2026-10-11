@@ -88,6 +88,9 @@ async function handleNavigation(details: NavigationDetails) {
 chrome.webNavigation.onBeforeNavigate.addListener((details) => void handleNavigation(details));
 // Server-side redirects can land on a blocked host without a fresh navigation.
 chrome.webNavigation.onCommitted.addListener((details) => void handleNavigation(details));
+// Single-page sites (YouTube, for one) change the address without loading a page,
+// which is the only way a path rule like `youtube.com/@channel` is ever reached in-app.
+chrome.webNavigation.onHistoryStateUpdated.addListener((details) => void handleNavigation(details));
 
 // ------------------------------------------------------- extensions-page guard
 

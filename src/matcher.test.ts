@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileRules, hostMatches, matchResult, normalizeSite } from './matcher';
+import { compileRules, hostMatches, isPageRule, matchResult, normalizePage, normalizeSite } from './matcher';
 import { DEFAULT_SETTINGS, type Settings } from './types';
 
 function settings(patch: Partial<Settings>): Settings {
@@ -91,7 +91,8 @@ describe('matchResult', () => {
   });
 
   it('blocks a site by any link inside the result and reports the rule', () => {
-    const rules = compileRules(settings({ sites: ['https://www.pinterest.com/boards'] }));
+    // A stored path would make this a page-only rule; a bare trailing slash does not.
+    const rules = compileRules(settings({ sites: ['https://www.pinterest.com/'] }));
     expect(matchResult(facts('a recipe', ['fr.pinterest.com']), rules)).toEqual({
       blocked: true,
       reason: 'pinterest.com',
@@ -102,5 +103,52 @@ describe('matchResult', () => {
     const rules = compileRules(DEFAULT_SETTINGS);
     expect(rules.empty).toBe(true);
     expect(matchResult(facts('anything at all', ['example.com']), rules).blocked).toBe(false);
+  });
+});
+
+describe('page-scoped site rules', () => {
+  const url = (href: string) => new URL(href);
+
+  it('keeps the path only when asked', () => {
+    expect(normalizeSite('https://www.youtube.com/@MKBHD/videos')).toBe('youtube.com');
+    expect(normalizeSite('https://www.youtube.com/@MKBHD/', true)).toBe('youtube.com/@mkbhd');
+    expect(normalizeSite('youtube.com/watch?v=abc#t=1', true)).toBe('youtube.com/watch?v=abc');
+    expect(normalizeSite('https://example.com/', true)).toBe('example.com');
+  });
+
+  it('sorts entries into sites and sub pages', () => {
+    expect(normalizePage('https://www.youtube.com/@mkbhd')).toBe('youtube.com/@mkbhd');
+    expect(normalizePage('youtube.com')).toBe('');
+    expect(isPageRule('youtube.com/@mkbhd')).toBe(true);
+    expect(isPageRule('youtube.com/watch?v=abc')).toBe(true);
+    expect(isPageRule('*.youtube.com')).toBe(false);
+  });
+
+  it('covers the page and those below it, not the rest of the site', () => {
+    const [rule] = compileRules(settings({ sites: ['youtube.com/@mkbhd'] })).sites;
+    expect(rule.testUrl(url('https://www.youtube.com/@mkbhd'))).toBe(true);
+    expect(rule.testUrl(url('https://www.youtube.com/@MKBHD/videos'))).toBe(true);
+    expect(rule.testUrl(url('https://m.youtube.com/@mkbhd'))).toBe(true);
+    expect(rule.testUrl(url('https://www.youtube.com/@mkbhdclips'))).toBe(false);
+    expect(rule.testUrl(url('https://www.youtube.com/'))).toBe(false);
+    expect(rule.test('youtube.com')).toBe(false);
+  });
+
+  it('requires the query parameters a rule names', () => {
+    const [rule] = compileRules(settings({ sites: ['youtube.com/watch?v=abc'] })).sites;
+    expect(rule.testUrl(url('https://www.youtube.com/watch?v=abc&t=10'))).toBe(true);
+    expect(rule.testUrl(url('https://www.youtube.com/watch?v=xyz'))).toBe(false);
+  });
+
+  it('hides search results that link under the path', () => {
+    const rules = compileRules(settings({ sites: ['youtube.com/@mkbhd'] }));
+    expect(
+      matchResult(facts('mkbhd', ['www.youtube.com'], ['https://www.youtube.com/@mkbhd']), rules)
+        .blocked,
+    ).toBe(true);
+    expect(
+      matchResult(facts('other', ['www.youtube.com'], ['https://www.youtube.com/watch?v=1']), rules)
+        .blocked,
+    ).toBe(false);
   });
 });

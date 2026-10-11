@@ -88,8 +88,9 @@ export function Backup({ settings, update }: BackupProps) {
 
   const applyRules = (raw: string, source: string) => {
     const parsed = parseRuleFile(raw);
-    const incomingSites = parsed.sites.map(normalizeSite).filter(Boolean);
-    const incomingAllowed = parsed.allowedSites.map(normalizeSite).filter(Boolean);
+    // Paths are kept: an export carries any page-only rules as they were saved.
+    const incomingSites = parsed.sites.map((site) => normalizeSite(site, true)).filter(Boolean);
+    const incomingAllowed = parsed.allowedSites.map((site) => normalizeSite(site, true)).filter(Boolean);
 
     if (mode === 'replace') {
       const keywords = merge([], parsed.keywords).merged;

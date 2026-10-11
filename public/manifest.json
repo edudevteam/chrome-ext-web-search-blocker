@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Web Content Blocker",
-  "version": "1.2.15",
+  "version": "1.2.19",
   "description": "Hide search results matching your blocked keywords and sites — across All, Images, News, Videos, Maps and Goggles.",
   "permissions": ["storage", "webNavigation", "tabs", "favicon"],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
