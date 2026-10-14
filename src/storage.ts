@@ -60,7 +60,7 @@ const KEY = 'settings';
 const area = chrome.storage.sync;
 
 /** Merge stored values over the defaults so new fields survive upgrades. */
-function normalize(raw: unknown): Settings {
+export function normalizeSettings(raw: unknown): Settings {
   const value = (raw ?? {}) as Partial<Settings>;
   const types = { ...DEFAULT_SETTINGS.types };
   for (const t of SEARCH_TYPES) {
@@ -85,7 +85,7 @@ function normalize(raw: unknown): Settings {
 export async function loadSettings(): Promise<Settings> {
   try {
     const stored = await area.get(KEY);
-    return normalize(stored[KEY]);
+    return normalizeSettings(stored[KEY]);
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
@@ -101,7 +101,7 @@ export function onSettingsChanged(cb: (settings: Settings) => void): () => void 
     areaName: string,
   ) => {
     if (areaName !== 'sync' || !changes[KEY]) return;
-    cb(normalize(changes[KEY].newValue));
+    cb(normalizeSettings(changes[KEY].newValue));
   };
   chrome.storage.onChanged.addListener(listener);
   return () => chrome.storage.onChanged.removeListener(listener);

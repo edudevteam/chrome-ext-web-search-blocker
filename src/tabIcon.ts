@@ -21,7 +21,7 @@ export const ICON_SIZE = 64;
 
 const KEY = 'tabIcon';
 
-function normalize(raw: unknown): TabIconState | null {
+export function normalizeTabIcon(raw: unknown): TabIconState | null {
   const value = (raw ?? {}) as Partial<TabIconState>;
   if (typeof value.dataUrl !== 'string' || !value.dataUrl.startsWith('data:image/')) return null;
   return {
@@ -34,7 +34,7 @@ function normalize(raw: unknown): TabIconState | null {
 /** Null means no icon has been uploaded. */
 export async function loadTabIcon(): Promise<TabIconState | null> {
   const stored = await chrome.storage.local.get(KEY);
-  return normalize(stored[KEY]);
+  return normalizeTabIcon(stored[KEY]);
 }
 
 export async function saveTabIcon(state: TabIconState): Promise<void> {
@@ -47,7 +47,7 @@ export async function clearTabIcon(): Promise<void> {
 
 export function onTabIconChanged(cb: (state: TabIconState | null) => void): () => void {
   const listener = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
-    if (areaName === 'local' && changes[KEY]) cb(normalize(changes[KEY].newValue));
+    if (areaName === 'local' && changes[KEY]) cb(normalizeTabIcon(changes[KEY].newValue));
   };
   chrome.storage.onChanged.addListener(listener);
   return () => chrome.storage.onChanged.removeListener(listener);

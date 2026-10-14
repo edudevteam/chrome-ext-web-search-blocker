@@ -1,5 +1,18 @@
 import { useRef, useState } from 'react';
 import { normalizeSite } from '../matcher';
+import { clearSayings, loadSayings, normalizeSayings, saveSayings, type SayingsState } from '../sayings';
+import {
+  loadSiteImages,
+  loadSiteLabels,
+  normalizeSiteImages,
+  normalizeSiteLabels,
+  saveSiteImages,
+  saveSiteLabels,
+  type SiteImages,
+  type SiteLabels,
+} from '../siteImages';
+import { normalizeSettings } from '../storage';
+import { clearTabIcon, loadTabIcon, normalizeTabIcon, saveTabIcon, type TabIconState } from '../tabIcon';
 import type { Settings } from '../types';
 
 interface BackupProps {
@@ -24,22 +37,66 @@ interface RuleFile {
   keywords: string[];
   sites: string[];
   allowedSites: string[];
+  /** Every toggle, the custom HTML and the tab title. Null for a bare rules file. */
+  settings: Settings | null;
+  /** Null when the file has none of its own. */
+  siteImages: SiteImages | null;
+  siteLabels: SiteLabels | null;
+  /** Undefined when the file doesn't say; null when the export had none. */
+  tabIcon: TabIconState | null | undefined;
+  sayings: SayingsState | null | undefined;
 }
 
-/** Accepts a full settings export or a bare `{ keywords, sites, allowedSites }` file. */
+/**
+ * Accepts a full backup (rules plus `settings`, site images, tab icon and
+ * sayings), an older rules-only export, or a bare `{ keywords, sites, allowedSites }` file.
+ */
 function parseRuleFile(raw: string): RuleFile {
   const data: unknown = JSON.parse(raw);
   if (typeof data !== 'object' || data === null) throw new Error('not a rules file');
-  const value = data as Partial<Settings> & { allowedSites?: unknown };
+  const value = data as Partial<Settings> & {
+    allowedSites?: unknown;
+    settings?: unknown;
+    siteImages?: unknown;
+    siteLabels?: unknown;
+    tabIcon?: unknown;
+    sayings?: unknown;
+  };
+  const settings =
+    typeof value.settings === 'object' && value.settings !== null
+      ? normalizeSettings(value.settings)
+      : null;
   const strings = (input: unknown) =>
     Array.isArray(input) ? input.filter((item): item is string => typeof item === 'string') : [];
-  const keywords = strings(value.keywords);
-  const sites = strings(value.sites);
-  const allowedSites = strings(value.allowedSites ?? value.whitelist?.sites);
-  if (keywords.length + sites.length + allowedSites.length === 0) {
+  const keywords = value.keywords ? strings(value.keywords) : (settings?.keywords ?? []);
+  const sites = value.sites ? strings(value.sites) : (settings?.sites ?? []);
+  const allowedSites =
+    value.allowedSites || value.whitelist
+      ? strings(value.allowedSites ?? value.whitelist?.sites)
+      : (settings?.whitelist.sites ?? []);
+  if (keywords.length + sites.length + allowedSites.length === 0 && !settings) {
     throw new Error('no rules in that file');
   }
-  return { keywords, sites, allowedSites };
+  return {
+    keywords,
+    sites,
+    allowedSites,
+    settings,
+    siteImages: 'siteImages' in value ? normalizeSiteImages(value.siteImages) : null,
+    siteLabels: 'siteLabels' in value ? normalizeSiteLabels(value.siteLabels) : null,
+    tabIcon: 'tabIcon' in value ? normalizeTabIcon(value.tabIcon) : undefined,
+    sayings: 'sayings' in value ? normalizeSayings(value.sayings) : undefined,
+  };
+}
+
+/** Restores the tab icon or sayings from a backup: set, clear, or leave alone. */
+async function restoreLocal<T>(
+  incoming: T | null | undefined,
+  save: (value: T) => Promise<void>,
+  clear: () => Promise<void>,
+): Promise<void> {
+  if (incoming === undefined) return;
+  await (incoming === null ? clear() : save(incoming));
 }
 
 /** Case-insensitive union that keeps the existing entries and their order. */
@@ -62,13 +119,26 @@ export function Backup({ settings, update }: BackupProps) {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const exportRules = () => {
+  const exportRules = async () => {
+    const [siteImages, siteLabels, tabIcon, sayings] = await Promise.all([
+      loadSiteImages(),
+      loadSiteLabels(),
+      loadTabIcon().catch(() => null),
+      loadSayings().catch(() => null),
+    ]);
+    // The password lock is left out on purpose: a backup must never carry it.
     const payload = {
       exportedAt: new Date().toISOString(),
       version: chrome.runtime.getManifest().version,
+      // Kept at the top level so older versions can still import the rules.
       keywords: settings.keywords,
       sites: settings.sites,
       allowedSites: settings.whitelist.sites,
+      settings,
+      siteImages,
+      siteLabels,
+      tabIcon,
+      sayings,
     };
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }),
@@ -81,12 +151,13 @@ export function Backup({ settings, update }: BackupProps) {
     setNote({
       kind: 'ok',
       text:
-        `Exported ${settings.keywords.length} keywords, ${settings.sites.length} blocked sites ` +
-        `and ${settings.whitelist.sites.length} allowed sites.`,
+        `Exported ${settings.keywords.length} keywords, ${settings.sites.length} blocked sites, ` +
+        `${settings.whitelist.sites.length} allowed sites, ${Object.keys(siteImages).length} ` +
+        `site images and all of your settings.`,
     });
   };
 
-  const applyRules = (raw: string, source: string) => {
+  const applyRules = async (raw: string, source: string) => {
     const parsed = parseRuleFile(raw);
     // Paths are kept: an export carries any page-only rules as they were saved.
     const incomingSites = parsed.sites.map((site) => normalizeSite(site, true)).filter(Boolean);
@@ -100,18 +171,36 @@ export function Backup({ settings, update }: BackupProps) {
         `Replace all of your rules with the ${keywords.length} keywords, ${sites.length} ` +
           `blocked sites and ${allowed.length} allowed sites from ${source}?\n\n` +
           `Your current ${settings.keywords.length} keywords, ${settings.sites.length} blocked ` +
-          `sites and ${settings.whitelist.sites.length} allowed sites will be removed.`,
+          `sites and ${settings.whitelist.sites.length} allowed sites will be removed.` +
+          (parsed.settings
+            ? `\n\nThis is a full backup: every toggle, the custom HTML, site images, tab ` +
+              `title and icon will be restored from it too.`
+            : ''),
       );
       if (!ok) {
         setNote(null);
         return;
       }
-      update({ keywords, sites, whitelist: { ...settings.whitelist, sites: allowed } });
+      if (parsed.settings) {
+        update({
+          ...parsed.settings,
+          keywords,
+          sites,
+          whitelist: { ...parsed.settings.whitelist, sites: allowed },
+        });
+      } else {
+        update({ keywords, sites, whitelist: { ...settings.whitelist, sites: allowed } });
+      }
+      if (parsed.siteImages) await saveSiteImages(parsed.siteImages);
+      if (parsed.siteLabels) await saveSiteLabels(parsed.siteLabels);
+      await restoreLocal(parsed.tabIcon, saveTabIcon, clearTabIcon);
+      await restoreLocal(parsed.sayings, saveSayings, clearSayings);
       setNote({
         kind: 'ok',
         text:
           `Replaced your rules with ${keywords.length} keywords, ${sites.length} blocked sites ` +
-          `and ${allowed.length} allowed sites.`,
+          `and ${allowed.length} allowed sites.` +
+          (parsed.settings ? ' Your settings, custom HTML and site images were restored.' : ''),
       });
       return;
     }
@@ -119,25 +208,46 @@ export function Backup({ settings, update }: BackupProps) {
     const keywords = merge(settings.keywords, parsed.keywords);
     const sites = merge(settings.sites, incomingSites);
     const allowed = merge(settings.whitelist.sites, incomingAllowed);
-    // Importing never switches the whitelist on — it only fills the list.
+    const channels = merge(settings.stream.channels, parsed.settings?.stream.channels ?? []);
+    const streamKeywords = merge(settings.stream.keywords, parsed.settings?.stream.keywords ?? []);
+    // Appending never changes a toggle or the custom HTML — it only fills the lists.
     update({
       keywords: keywords.merged,
       sites: sites.merged,
       whitelist: { ...settings.whitelist, sites: allowed.merged },
+      stream: { ...settings.stream, channels: channels.merged, keywords: streamKeywords.merged },
     });
+
+    // Images and labels you already set win over the file's.
+    let imagesAdded = 0;
+    if (parsed.siteImages) {
+      const current = await loadSiteImages();
+      imagesAdded = Object.keys(parsed.siteImages).filter((site) => !(site in current)).length;
+      await saveSiteImages({ ...parsed.siteImages, ...current });
+    }
+    if (parsed.siteLabels) {
+      await saveSiteLabels({ ...parsed.siteLabels, ...(await loadSiteLabels()) });
+    }
+
+    const added =
+      keywords.added + sites.added + allowed.added + channels.added + streamKeywords.added;
+    const settingsHint = parsed.settings
+      ? ' Settings and custom HTML in the file were not applied — use “Import (replace all)” to restore them.'
+      : '';
     setNote({
       kind: 'ok',
       text:
-        keywords.added + sites.added + allowed.added === 0
-          ? `Nothing new — every rule in ${source} was already here.`
-          : `Added ${keywords.added} keywords, ${sites.added} blocked sites and ` +
-            `${allowed.added} allowed sites. Nothing was removed.`,
+        added + imagesAdded === 0
+          ? `Nothing new — every rule in ${source} was already here.${settingsHint}`
+          : `Added ${keywords.added} keywords, ${sites.added} blocked sites, ` +
+            `${allowed.added} allowed sites and ${imagesAdded} site images. ` +
+            `Nothing was removed.${settingsHint}`,
     });
   };
 
   const importFile = async (file: File) => {
     try {
-      applyRules(await file.text(), 'that file');
+      await applyRules(await file.text(), 'that file');
     } catch (error) {
       setNote({ kind: 'error', text: `Could not read that file: ${(error as Error).message}` });
     }
@@ -168,7 +278,7 @@ export function Backup({ settings, update }: BackupProps) {
             signal: AbortSignal.timeout(15000),
           });
           if (!response.ok) throw new Error(`the server answered ${response.status}`);
-          applyRules(await response.text(), target.host);
+          await applyRules(await response.text(), target.host);
         } catch (error) {
           const message =
             error instanceof SyntaxError ? 'that is not a JSON rules file' : (error as Error).message;
@@ -186,11 +296,13 @@ export function Backup({ settings, update }: BackupProps) {
       <p className="section__hint">
         Rules survive rebuilding and reloading the extension, but they are tied to the
         extension&rsquo;s identity — removing it and adding it back from a different folder
-        starts you empty. Keep an export before you do anything like that.
+        starts you empty. Keep an export before you do anything like that. The export holds your
+        rules, every toggle, the custom landing page HTML, site images and labels, the tab title
+        and icon, and your sayings — but never your password.
       </p>
       <div className="backup__actions">
-        <button type="button" onClick={exportRules}>
-          Export rules
+        <button type="button" onClick={() => void exportRules()}>
+          Export rules &amp; settings
         </button>
       </div>
 
@@ -208,7 +320,10 @@ export function Backup({ settings, update }: BackupProps) {
           />
           <span className="mode__body">
             <span className="mode__label">Import (append to existing)</span>
-            <span className="mode__hint">Adds new rules. Nothing you already have is removed.</span>
+            <span className="mode__hint">
+              Adds new rules and site images. Nothing you already have is removed, and your
+              toggles and custom HTML stay as they are.
+            </span>
           </span>
         </label>
         <label className="mode">
@@ -222,6 +337,8 @@ export function Backup({ settings, update }: BackupProps) {
             <span className="mode__label">Import (replace all)</span>
             <span className="mode__hint">
               Your keywords, blocked sites and allowed sites become exactly what is imported.
+              A full backup also restores every toggle, the custom HTML, site images and the tab
+              title and icon.
             </span>
           </span>
         </label>

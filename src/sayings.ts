@@ -65,7 +65,7 @@ export function parseSayings(raw: string): Saying[] {
   return sayings;
 }
 
-function normalize(raw: unknown): SayingsState | null {
+export function normalizeSayings(raw: unknown): SayingsState | null {
   const value = (raw ?? {}) as Partial<SayingsState>;
   if (!Array.isArray(value.sayings)) return null;
   const sayings = value.sayings
@@ -78,7 +78,7 @@ function normalize(raw: unknown): SayingsState | null {
 /** Null means the built-in proverbs are in use. */
 export async function loadSayings(): Promise<SayingsState | null> {
   const stored = await chrome.storage.local.get(KEY);
-  return normalize(stored[KEY]);
+  return normalizeSayings(stored[KEY]);
 }
 
 export async function saveSayings(state: SayingsState): Promise<void> {
@@ -91,7 +91,7 @@ export async function clearSayings(): Promise<void> {
 
 export function onSayingsChanged(cb: (state: SayingsState | null) => void): () => void {
   const listener = (changes: Record<string, chrome.storage.StorageChange>, areaName: string) => {
-    if (areaName === 'local' && changes[KEY]) cb(normalize(changes[KEY].newValue));
+    if (areaName === 'local' && changes[KEY]) cb(normalizeSayings(changes[KEY].newValue));
   };
   chrome.storage.onChanged.addListener(listener);
   return () => chrome.storage.onChanged.removeListener(listener);
