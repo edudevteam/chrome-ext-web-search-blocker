@@ -1,4 +1,4 @@
-// Zips dist/ into release/web-content-blocker-<version>.zip for the Chrome Web Store.
+// Zips dist/ into release/blocksy-<version>.zip for the Chrome Web Store.
 //
 // The Store reads manifest.json from the root of the archive, so this zips the
 // *contents* of dist/ rather than the folder — an archive holding `dist/manifest.json`
@@ -46,7 +46,7 @@ if (packageVersion !== builtVersion) {
   );
 }
 
-const name = `web-content-blocker-${packageVersion}.zip`;
+const name = `blocksy-${packageVersion}.zip`;
 const archive = resolve(RELEASE, name);
 
 mkdirSync(RELEASE, { recursive: true });

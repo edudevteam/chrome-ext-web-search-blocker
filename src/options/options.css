@@ -285,9 +285,14 @@ body {
   cursor: pointer;
 }
 
-.check button:hover {
+.check button:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.check button:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
 .field {

@@ -9,10 +9,15 @@ import { LANDING_PAGE } from '../redirect';
 import {
   isImageUrl,
   loadSiteImages,
+  loadSiteLabels,
   MAX_IMAGE_URL,
+  MAX_SITE_LABEL,
   normalizeSiteImages,
+  normalizeSiteLabels,
   saveSiteImages,
+  saveSiteLabels,
   type SiteImages,
+  type SiteLabels,
 } from '../siteImages';
 import { MAX_LANDING_HTML, type Settings } from '../types';
 import { Toggle } from '../ui/Toggle';
@@ -34,20 +39,25 @@ export function Editor() {
   const [draft, setDraft] = useState<string | null>(null);
   const [savedImages, setSavedImages] = useState<SiteImages | null>(null);
   const [images, setImages] = useState<SiteImages>({});
+  const [savedLabels, setSavedLabels] = useState<SiteLabels | null>(null);
+  const [labels, setLabels] = useState<SiteLabels>({});
   const [tab, setTab] = useState<'html' | 'images'>('html');
   const latest = useRef<{
     settings: Settings | null;
     draft: string | null;
     images: SiteImages;
     savedImages: SiteImages | null;
-  }>({ settings: null, draft: null, images: {}, savedImages: null });
+    labels: SiteLabels;
+    savedLabels: SiteLabels | null;
+  }>({ settings: null, draft: null, images: {}, savedImages: null, labels: {}, savedLabels: null });
   const frame = useRef<HTMLIFrameElement>(null);
   const code = useRef<HTMLTextAreaElement>(null);
 
-  latest.current = { settings, draft, images, savedImages };
+  latest.current = { settings, draft, images, savedImages, labels, savedLabels };
   const htmlDirty = settings !== null && draft !== null && draft !== savedHtml(settings);
   const imagesDirty = savedImages !== null && !sameImages(images, savedImages);
-  const dirty = htmlDirty || imagesDirty;
+  const labelsDirty = savedLabels !== null && !sameLabels(labels, savedLabels);
+  const dirty = htmlDirty || imagesDirty || labelsDirty;
 
   // Take the saved markup once; after that the draft is the source of truth.
   useEffect(() => {
@@ -59,11 +69,21 @@ export function Editor() {
       setSavedImages(stored);
       setImages(stored);
     });
+    void loadSiteLabels().then((stored) => {
+      setSavedLabels(stored);
+      setLabels(stored);
+    });
   }, []);
 
   const save = () => {
-    const { settings: current, draft: html, images: nextImages, savedImages: stored } =
-      latest.current;
+    const {
+      settings: current,
+      draft: html,
+      images: nextImages,
+      savedImages: stored,
+      labels: nextLabels,
+      savedLabels: storedLabels,
+    } = latest.current;
     if (current && html !== null) {
       // An empty value means "the built-in template", as on the settings page.
       const value = html === DEFAULT_LANDING_HTML ? '' : html;
@@ -73,13 +93,17 @@ export function Editor() {
       const valid = normalizeSiteImages(nextImages);
       void saveSiteImages(valid).then(() => setSavedImages(valid));
     }
+    if (storedLabels && !sameLabels(nextLabels, storedLabels)) {
+      const valid = normalizeSiteLabels(nextLabels);
+      void saveSiteLabels(valid).then(() => setSavedLabels(valid));
+    }
   };
 
   const postPreview = () => {
-    const { draft: html, images: previewImages } = latest.current;
+    const { draft: html, images: previewImages, labels: previewLabels } = latest.current;
     if (html === null) return;
     frame.current?.contentWindow?.postMessage(
-      { previewHtml: html, previewImages },
+      { previewHtml: html, previewImages, previewLabels },
       location.origin,
     );
   };
@@ -97,7 +121,7 @@ export function Editor() {
     if (draft === null) return;
     const timer = window.setTimeout(postPreview, PREVIEW_MS);
     return () => window.clearTimeout(timer);
-  }, [draft, images]);
+  }, [draft, images, labels]);
 
   // Ask before closing the tab on unsaved edits.
   useEffect(() => {
@@ -221,6 +245,8 @@ export function Editor() {
               samples={!hasAllowedSites}
               images={images}
               onChange={setImages}
+              labels={labels}
+              onLabelsChange={setLabels}
             />
           ) : null}
           {/* Hidden rather than unmounted, so the textarea keeps its undo history. */}
@@ -289,20 +315,45 @@ function sameImages(a: SiteImages, b: SiteImages): boolean {
   return [...keys].every((key) => (a[key] ?? '').trim() === (b[key] ?? '').trim());
 }
 
+/** A label switched to custom text but left empty still shows the address. */
+function sameLabels(a: SiteLabels, b: SiteLabels): boolean {
+  return sameImages(normalizeSiteLabels(a), normalizeSiteLabels(b));
+}
+
 interface SiteImagesPanelProps {
   sites: string[];
   samples: boolean;
   images: SiteImages;
   onChange: (images: SiteImages) => void;
+  labels: SiteLabels;
+  onLabelsChange: (labels: SiteLabels) => void;
 }
 
-/** One image address per allowed site, for `{{image}}`. */
-function SiteImagesPanel({ sites, samples, images, onChange }: SiteImagesPanelProps) {
+/**
+ * One image address per allowed site, for `{{image}}`, and a choice of showing
+ * the address or your own text as `{{site}}`.
+ */
+function SiteImagesPanel({
+  sites,
+  samples,
+  images,
+  onChange,
+  labels,
+  onLabelsChange,
+}: SiteImagesPanelProps) {
   const set = (site: string, url: string) => {
     const next = { ...images };
     if (url.trim()) next[site] = url;
     else delete next[site];
     onChange(next);
+  };
+
+  // An entry in `labels`, even an empty one, means custom text is chosen.
+  const setLabel = (site: string, label: string | null) => {
+    const next = { ...labels };
+    if (label === null) delete next[site];
+    else next[site] = label;
+    onLabelsChange(next);
   };
 
   return (
@@ -318,36 +369,81 @@ function SiteImagesPanel({ sites, samples, images, onChange }: SiteImagesPanelPr
         {sites.map((site) => {
           const url = (images[site] ?? '').trim();
           const invalid = url !== '' && !isImageUrl(url);
+          const label = labels[site];
           return (
             <li key={site} className="site-images__row">
               <span className="site-images__thumb" aria-hidden="true">
                 {url && !invalid ? <img src={url} alt="" /> : null}
               </span>
-              <label className="site-images__field">
-                <span className="site-images__site">{site}</span>
-                <input
-                  className="text-input"
-                  type="url"
-                  value={images[site] ?? ''}
-                  placeholder="https://example.com/logo.png"
-                  spellCheck={false}
-                  autoComplete="off"
-                  maxLength={MAX_IMAGE_URL}
-                  aria-invalid={invalid}
-                  onChange={(event) => set(site, event.target.value)}
-                />
-                {invalid ? (
-                  <span className="site-images__error">
-                    Use an http:// or https:// address. This one won't be saved.
-                  </span>
-                ) : null}
-              </label>
+              <div className="site-images__field">
+                <label className="site-images__field">
+                  <span className="site-images__site">{site}</span>
+                  <input
+                    className="text-input"
+                    type="url"
+                    value={images[site] ?? ''}
+                    placeholder="https://example.com/logo.png"
+                    spellCheck={false}
+                    autoComplete="off"
+                    maxLength={MAX_IMAGE_URL}
+                    aria-invalid={invalid}
+                    onChange={(event) => set(site, event.target.value)}
+                  />
+                  {invalid ? (
+                    <span className="site-images__error">
+                      Use an http:// or https:// address. This one won't be saved.
+                    </span>
+                  ) : null}
+                </label>
+                <fieldset className="site-images__label">
+                  <legend>Show as</legend>
+                  <label>
+                    <input
+                      type="radio"
+                      name={`label-${site}`}
+                      checked={label === undefined}
+                      onChange={() => setLabel(site, null)}
+                    />
+                    Full address
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name={`label-${site}`}
+                      checked={label !== undefined}
+                      onChange={() => setLabel(site, suggestLabel(site))}
+                    />
+                    Custom text
+                  </label>
+                  {label !== undefined ? (
+                    <input
+                      className="text-input"
+                      type="text"
+                      value={label}
+                      placeholder={suggestLabel(site)}
+                      aria-label={`Text shown for ${site}`}
+                      spellCheck={false}
+                      autoComplete="off"
+                      maxLength={MAX_SITE_LABEL}
+                      onChange={(event) => setLabel(site, event.target.value)}
+                    />
+                  ) : null}
+                </fieldset>
+              </div>
             </li>
           );
         })}
       </ul>
     </div>
   );
+}
+
+/**
+ * A starting point for custom text: a channel's handle (`youtube.com/@name` ->
+ * `@name`), or the entry itself for a whole site.
+ */
+function suggestLabel(site: string): string {
+  return site.split('/').filter(Boolean).slice(1).pop() ?? site;
 }
 
 interface PillGroupProps {

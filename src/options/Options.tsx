@@ -10,6 +10,7 @@ import { RedirectSection } from './RedirectSection';
 import { SettingsNav, type SettingsPane } from './SettingsNav';
 import { StreamRulesSection, StreamToggleSection } from './StreamSection';
 import { TabSection } from './TabSection';
+import { UpdateSection } from './UpdateSection';
 import { WhitelistSection } from './WhitelistSection';
 
 type Tab = 'blocked' | 'whitelisted' | 'streams' | 'settings';
@@ -142,6 +143,11 @@ export function Options() {
                 <section className="section">
                   <Backup settings={settings} update={update} />
                 </section>
+              </div>
+            ) : null}
+            {pane === 'update' ? (
+              <div className="card">
+                <UpdateSection />
               </div>
             ) : null}
           </div>

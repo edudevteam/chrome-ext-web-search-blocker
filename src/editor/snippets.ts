@@ -48,6 +48,7 @@ export const LAYOUTS: Snippet[] = [
   .wcb-tiles a { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; border: 1px solid var(--rule); border-radius: 12px; color: inherit; text-decoration: none; font: 13px system-ui, sans-serif; }
   .wcb-tiles a:hover { border-color: var(--ink-soft); }
   .wcb-tiles img { width: 48px; height: 48px; object-fit: contain; }
+  .wcb-tiles span { max-width: 100%; overflow-wrap: anywhere; text-align: center; }
   .wcb-tiles [data-no-image] img { display: none; }
 </style>
 <ul class="wcb-tiles">

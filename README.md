@@ -114,6 +114,16 @@ policy is [PRIVACY.md](PRIVACY.md). Publishing **Unlisted**
 gets you an install link without the discovery-surface scrutiny of a public listing,
 and can be flipped public later.
 
+### Updates
+
+A Store install updates itself: upload a new `pnpm zip` build and Chrome fetches it
+within a few hours, keeping every rule. **Settings → Updates** has a *Check for
+updates* button that asks the Store right away. Once a new version has downloaded,
+that pane and the popup offer *Restart to update*, which reloads the extension to
+install it. Without a restart, Chrome installs it the next time the extension goes
+idle. An unpacked install never updates; the pane says so and explains how to update
+it by hand.
+
 `chrome://extensions` → *Pack extension* produces a `.crx` instead, but Chrome has
 blocked installing those from outside the Web Store on Windows and macOS for years.
 For local use, **Load unpacked** on `dist/` is the better path.

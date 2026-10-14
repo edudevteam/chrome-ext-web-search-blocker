@@ -4,6 +4,7 @@ import { redirectTarget, shouldRedirect } from './redirect';
 import { loadSettings, onSettingsChanged, saveSettings } from './storage';
 import { blockedSearchTarget, compileStreamRules, type StreamRules } from './stream/sites';
 import { DEFAULT_SETTINGS, type Message, type Settings } from './types';
+import { clearPendingUpdate, savePendingUpdate } from './update';
 
 const BADGE_COLOR = '#ef4444';
 
@@ -35,7 +36,15 @@ onSettingsChanged((next) => {
 chrome.runtime.onInstalled.addListener(() => {
   // Materialise the defaults so the pages and content script agree from day one.
   void loadSettings().then(saveSettings);
+  // Whatever was waiting to install just has.
+  void clearPendingUpdate();
 });
+
+// ---------------------------------------------------------------------- updates
+
+// Chrome has downloaded a new version from the Store but holds it until the worker
+// goes idle. Recording it lets the popup and settings page offer to apply it now.
+chrome.runtime.onUpdateAvailable.addListener(({ version }) => void savePendingUpdate(version));
 
 // ---------------------------------------------------------------- badge counts
 

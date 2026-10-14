@@ -7,7 +7,8 @@ export type SettingsPane =
   | 'redirect'
   | 'tab'
   | 'password'
-  | 'backup';
+  | 'backup'
+  | 'update';
 
 // Stroke icons on a 24px grid; they inherit currentColor from the button.
 const ICONS: Record<SettingsPane, ReactNode> = {
@@ -50,6 +51,13 @@ const ICONS: Record<SettingsPane, ReactNode> = {
       <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
     </>
   ),
+  // Two arrows chasing each other round: refresh.
+  update: (
+    <>
+      <path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4" />
+      <path d="M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4" />
+    </>
+  ),
 };
 
 export const SETTINGS_PANES: { id: SettingsPane; label: string }[] = [
@@ -60,6 +68,7 @@ export const SETTINGS_PANES: { id: SettingsPane; label: string }[] = [
   { id: 'tab', label: 'Browser tab' },
   { id: 'password', label: 'Password' },
   { id: 'backup', label: 'Backup' },
+  { id: 'update', label: 'Updates' },
 ];
 
 interface Props {

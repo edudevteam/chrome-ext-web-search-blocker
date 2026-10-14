@@ -26,3 +26,9 @@ body {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+.popup-settings .popup-update {
+  margin-bottom: 8px;
+  border-color: #16a34a;
+  background: color-mix(in srgb, #16a34a 12%, var(--bg-soft));
+}

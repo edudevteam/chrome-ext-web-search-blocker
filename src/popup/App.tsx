@@ -3,7 +3,9 @@ import { ENGINES } from '../engines';
 import { SEARCH_TYPE_LABELS, type Message, type PageStats } from '../types';
 import { RuleSections } from '../ui/SettingsSections';
 import { buildStamp } from '../ui/buildStamp';
+import { usePendingUpdate } from '../ui/usePendingUpdate';
 import { useSettings } from '../ui/useSettings';
+import { applyUpdate } from '../update';
 
 /** undefined = still checking, null = not a supported search page. */
 type Stats = PageStats | null | undefined;
@@ -23,6 +25,7 @@ async function fetchStats(): Promise<PageStats | null> {
 export function App() {
   const [settings, update] = useSettings();
   const [stats, setStats] = useState<Stats>(undefined);
+  const pendingUpdate = usePendingUpdate();
 
   useEffect(() => {
     let alive = true;
@@ -55,6 +58,11 @@ export function App() {
       </header>
 
       <div className="popup-settings">
+        {pendingUpdate ? (
+          <button type="button" className="popup-update" onClick={applyUpdate}>
+            Update to v{pendingUpdate} — restart now
+          </button>
+        ) : null}
         <button type="button" onClick={() => chrome.runtime.openOptionsPage()}>
           Settings &amp; diagnostics ↗
         </button>

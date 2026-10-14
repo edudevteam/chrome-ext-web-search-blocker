@@ -151,6 +151,16 @@ a.wcb-card:focus-visible {
   overflow-wrap: anywhere;
 }
 
+/*
+ * Each stamped site from a custom template: a long address such as
+ * youtube.com/@channel wraps inside its card instead of spilling out of it.
+ */
+[data-site],
+[data-site] * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .wcb-card__note {
   font-size: 12px;
   color: #6b6459;

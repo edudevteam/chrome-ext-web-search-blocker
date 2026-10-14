@@ -63,7 +63,7 @@ export type SitePlaceholder = 'site' | 'url' | 'image' | 'initial' | 'favicon';
 
 export const SITE_PLACEHOLDERS: { key: SitePlaceholder; hint: string }[] = [
   { key: 'url', hint: 'https:// address to link to (empty for a wildcard rule)' },
-  { key: 'site', hint: 'The allowed-list entry as written' },
+  { key: 'site', hint: 'The allowed-list entry as written, or the custom text you set for it' },
   { key: 'image', hint: 'The image you set for the site under Site images' },
   { key: 'favicon', hint: 'The site’s icon, from the browser’s own cache' },
   { key: 'initial', hint: 'First letter of the site' },

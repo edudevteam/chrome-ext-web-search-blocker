@@ -7,7 +7,14 @@ import {
 } from '../landing';
 import { compileRules } from '../matcher';
 import { loadSayings, type Saying } from '../sayings';
-import { loadSiteImages, normalizeSiteImages, type SiteImages } from '../siteImages';
+import {
+  loadSiteImages,
+  loadSiteLabels,
+  normalizeSiteImages,
+  normalizeSiteLabels,
+  type SiteImages,
+  type SiteLabels,
+} from '../siteImages';
 import { loadSettings } from '../storage';
 import { applyTabAppearance } from '../tabIcon';
 import type { Settings } from '../types';
@@ -38,6 +45,7 @@ async function render(): Promise<void> {
   // The preview repaints on every edit, so it loads the phrases once up front.
   let sayings: Saying[] | null = PREVIEW ? await loadQuotes() : null;
   let images = await loadSiteImages();
+  let labels = await loadSiteLabels();
 
   const paint = async (markup: string) => {
     // Assigning innerHTML on an extension page does not execute <script>, and the
@@ -59,7 +67,7 @@ async function render(): Promise<void> {
       stopRotation();
     }
 
-    renderAllowed(root, settings, images, isHome);
+    renderAllowed(root, settings, images, labels, isHome);
   };
 
   if (!PREVIEW) {
@@ -71,6 +79,7 @@ async function render(): Promise<void> {
   window.addEventListener('message', (event) => {
     if (event.origin !== location.origin || typeof event.data?.previewHtml !== 'string') return;
     images = normalizeSiteImages(event.data.previewImages);
+    labels = normalizeSiteLabels(event.data.previewLabels);
     void paint(event.data.previewHtml.trim() || DEFAULT_LANDING_HTML);
   });
   window.parent.postMessage({ previewReady: true }, location.origin);
@@ -84,6 +93,7 @@ function renderAllowed(
   root: HTMLElement,
   settings: Settings | null,
   images: SiteImages,
+  labels: SiteLabels,
   isHome: boolean,
 ): void {
   let sites = settings ? allowedSites(settings) : [];
@@ -96,7 +106,7 @@ function renderAllowed(
 
   const template = root.querySelector<HTMLTemplateElement>(`template#${SITE_TEMPLATE_ID}`);
   if (template) {
-    renderTemplate(template, sites, images);
+    renderTemplate(template, sites, images, labels);
     return;
   }
 
@@ -114,7 +124,7 @@ function renderAllowed(
 
   const grid = document.createElement('ul');
   grid.className = 'wcb-allowed__grid';
-  for (const site of sites) grid.append(siteCard(site));
+  for (const site of sites) grid.append(siteCard(site, labels[site]));
 
   section.append(grid);
 }
@@ -143,12 +153,18 @@ function siteUrl(site: string): URL {
  * A custom template owns the layout: it is stamped out once per site, in its own
  * place, with `{{placeholders}}` filled into text and attributes.
  */
-function renderTemplate(template: HTMLTemplateElement, sites: string[], images: SiteImages): void {
+function renderTemplate(
+  template: HTMLTemplateElement,
+  sites: string[],
+  images: SiteImages,
+  labels: SiteLabels,
+): void {
   const stamps = sites.map((site) => {
     const isPattern = site.includes('*');
     const host = site.replace(/^[*.]+/, '');
     const values: Record<SitePlaceholder, string> = {
-      site,
+      // Your custom text for the entry, where you set one.
+      site: labels[site] ?? site,
       url: isPattern ? '' : `https://${site}`,
       image: images[site] ?? '',
       initial: (host[0] ?? '*').toUpperCase(),
@@ -197,7 +213,7 @@ function faviconUrl(pageUrl: string): string {
   return url.toString();
 }
 
-function siteCard(site: string): HTMLLIElement {
+function siteCard(site: string, label?: string): HTMLLIElement {
   const item = document.createElement('li');
   const isPattern = site.includes('*');
 
@@ -213,7 +229,7 @@ function siteCard(site: string): HTMLLIElement {
 
   const name = document.createElement('span');
   name.className = 'wcb-card__name';
-  name.textContent = site;
+  name.textContent = label ?? site;
 
   card.append(mark, name);
   if (isPattern) {

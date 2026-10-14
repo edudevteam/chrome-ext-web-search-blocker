@@ -226,6 +226,34 @@ body {
   font-weight: 600;
 }
 
+.site-images__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 6px 0 0;
+  padding: 0;
+  border: 0;
+  font-size: 12px;
+}
+
+.site-images__label legend {
+  float: left;
+  padding: 0;
+  margin-right: 2px;
+  font-weight: 600;
+}
+
+.site-images__label label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.site-images__label .text-input {
+  flex-basis: 100%;
+}
+
 .site-images__error {
   font-size: 11px;
   color: var(--danger);
