@@ -1,4 +1,4 @@
-import { compileKeyword, type KeywordRule } from '../matcher';
+import { compileKeyword, type CompiledRules, type KeywordRule } from '../matcher';
 import type { StreamSettings } from '../types';
 
 /** Where a streaming site keeps its results, and what to read off each one. */
@@ -33,6 +33,8 @@ export interface WatchPage {
   channel: string;
   title: string;
   description: string;
+  /** The link to the video's channel, inside `root`. Its address is what a whitelist entry names. */
+  owner: string;
 }
 
 export const STREAM_SITES: StreamSite[] = [
@@ -86,6 +88,7 @@ export const STREAM_SITES: StreamSite[] = [
       title: '#title h1, h1',
       // The collapsed description still holds its full text.
       description: '#description-inline-expander, ytd-text-inline-expander, #description',
+      owner: ['/@', '/channel/', '/c/', '/user/'].map((path) => `#owner a[href^="${path}"]`).join(','),
     },
     home: 'https://www.youtube.com/',
   },
@@ -147,8 +150,43 @@ export function readWatchPage(doc: Document, url: URL, site: StreamSite): CardTe
   };
 }
 
+/**
+ * The channel address (`/@name`, `/channel/UC…`) of the video this page is
+ * for, or null while the page has not loaded it.
+ */
+export function readVideoChannel(doc: Document, url: URL, site: StreamSite): string | null {
+  const { watch } = site;
+  const id = watch.videoId(url);
+  if (!id || watch.showing(doc) !== id) return null;
+  return doc.querySelector(watch.root)?.querySelector(watch.owner)?.getAttribute('href') ?? null;
+}
+
 export function streamSiteFor(host: string): StreamSite | null {
   return STREAM_SITES.find((site) => site.matches(host)) ?? null;
+}
+
+/**
+ * Whether this video page is left for the page itself to judge against the
+ * whitelist. A video's address does not say whose it is, so a whitelisted
+ * channel (`youtube.com/@name`) would otherwise never let its own videos play.
+ * Only while some whitelist entry names part of this site, and never for a
+ * video the whitelist already allows outright or the blocked list catches.
+ */
+export function videoAwaitingChannel(url: URL, rules: CompiledRules): boolean {
+  const { whitelist } = rules;
+  if (!whitelist) return false;
+  const site = streamSiteFor(url.hostname);
+  if (!site?.watch.videoId(url)) return false;
+  if (whitelist.some((rule) => rule.testUrl(url))) return false;
+  if (rules.sites.some((rule) => rule.testUrl(url))) return false;
+  const origin = new URL(site.home);
+  return whitelist.some((rule) => rule.scope !== null && rule.testUrl(new URL(rule.scope, origin)));
+}
+
+/** Whether the whitelist allows the channel at this address (`/@name`). */
+export function channelAllowed(channel: string, site: StreamSite, rules: CompiledRules): boolean {
+  const url = new URL(channel, site.home);
+  return rules.whitelist?.some((rule) => rule.testUrl(url)) ?? false;
 }
 
 export interface StreamRules {

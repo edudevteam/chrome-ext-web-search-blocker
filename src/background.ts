@@ -2,7 +2,12 @@ import { isExtensionsPage, isUnlocked, loadLock, onLockChanged } from './lock';
 import { compileRules, type CompiledRules } from './matcher';
 import { redirectTarget, shouldRedirect } from './redirect';
 import { loadSettings, onSettingsChanged, saveSettings } from './storage';
-import { blockedSearchTarget, compileStreamRules, type StreamRules } from './stream/sites';
+import {
+  blockedSearchTarget,
+  compileStreamRules,
+  videoAwaitingChannel,
+  type StreamRules,
+} from './stream/sites';
 import { DEFAULT_SETTINGS, type Message, type Settings } from './types';
 import { clearPendingUpdate, savePendingUpdate } from './update';
 
@@ -103,6 +108,8 @@ async function handleNavigation(details: NavigationDetails) {
 function siteTarget(url: URL): string | null {
   if (settings.redirect.mode === 'off' && !rules.whitelist) return null;
   if (!shouldRedirect(url, rules)) return null;
+  // A whitelisted channel's video: only the page knows whose it is (stream/main.ts).
+  if (videoAwaitingChannel(url, rules)) return null;
   return redirectTarget(settings, rules);
 }
 

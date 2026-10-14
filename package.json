@@ -1,7 +1,7 @@
 {
   "name": "blocksy",
   "private": true,
-  "version": "1.3.10",
+  "version": "1.3.11",
   "type": "module",
   "description": "MV3 extension that blocks search results by keyword or site across every search type.",
   "scripts": {

@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { compileRules } from '../matcher';
+import { DEFAULT_SETTINGS } from '../types';
 import {
   blockedSearchTarget,
+  channelAllowed,
   compileStreamRules,
   matchStream,
   readCard,
+  readVideoChannel,
   readWatchPage,
   streamSiteFor,
+  videoAwaitingChannel,
 } from './sites';
 
 const rules = (channels: string[], keywords: string[] = []) =>
@@ -129,7 +134,10 @@ describe('readWatchPage', () => {
     <ytd-watch-flexy video-id="_fPh8_phIto">
       <ytd-watch-metadata>
         <div id="title"><h1><yt-formatted-string>Epic Prank Compilation</yt-formatted-string></h1></div>
-        <div id="owner"><ytd-channel-name><a>VMX Gaming</a></ytd-channel-name></div>
+        <div id="owner">
+          <a class="yt-simple-endpoint" href="/@VMXGaming"><yt-img-shadow></yt-img-shadow></a>
+          <ytd-channel-name><a href="/@VMXGaming">VMX Gaming</a></ytd-channel-name>
+        </div>
         <ytd-text-inline-expander id="description-inline-expander">
           <yt-attributed-string>Subscribe for more reaction videos every week</yt-attributed-string>
         </ytd-text-inline-expander>
@@ -156,5 +164,44 @@ describe('readWatchPage', () => {
 
   it('ignores pages that are not videos', () => {
     expect(read('https://www.youtube.com/results?search_query=prank')).toBeNull();
+  });
+
+  it("reads the video's channel address, once the page shows that video", () => {
+    document.body.innerHTML = WATCH;
+    const channel = (href: string) => readVideoChannel(document, new URL(href), youtube);
+    expect(channel('https://www.youtube.com/watch?v=_fPh8_phIto')).toBe('/@VMXGaming');
+    expect(channel('https://www.youtube.com/watch?v=someOtherId')).toBeNull();
+  });
+});
+
+describe('whitelisted channels', () => {
+  const youtube = streamSiteFor('www.youtube.com')!;
+  const allowing = (allowed: string[], blocked: string[] = []) =>
+    compileRules({ ...DEFAULT_SETTINGS, sites: blocked, whitelist: { enabled: true, sites: allowed } });
+  const awaiting = (href: string, siteRules: ReturnType<typeof allowing>) =>
+    videoAwaitingChannel(new URL(href), siteRules);
+  const VIDEO_URL = 'https://www.youtube.com/watch?v=_fPh8_phIto';
+
+  it('leaves a video for the page to judge while a channel is whitelisted', () => {
+    expect(awaiting(VIDEO_URL, allowing(['youtube.com/@vmxgaming']))).toBe(true);
+    expect(awaiting('https://www.youtube.com/@other', allowing(['youtube.com/@vmxgaming']))).toBe(false);
+  });
+
+  it('does not step in where the address alone decides', () => {
+    // No YouTube entry, the whole site allowed, the video itself allowed, or the whitelist off.
+    expect(awaiting(VIDEO_URL, allowing(['example.com/page']))).toBe(false);
+    expect(awaiting(VIDEO_URL, allowing(['youtube.com']))).toBe(false);
+    expect(awaiting(VIDEO_URL, allowing(['youtube.com/@x', 'youtube.com/watch?v=_fPh8_phIto']))).toBe(false);
+    expect(awaiting(VIDEO_URL, compileRules(DEFAULT_SETTINGS))).toBe(false);
+    // The blocked list still wins.
+    expect(awaiting(VIDEO_URL, allowing(['youtube.com/@vmxgaming'], ['youtube.com/watch']))).toBe(false);
+  });
+
+  it('allows only the whitelisted channels, by handle or id', () => {
+    const siteRules = allowing(['youtube.com/@vmxgaming', 'youtube.com/channel/UCabc']);
+    expect(channelAllowed('/@VMXGaming', youtube, siteRules)).toBe(true);
+    expect(channelAllowed('/channel/UCabc', youtube, siteRules)).toBe(true);
+    expect(channelAllowed('/@vmxgamingclips', youtube, siteRules)).toBe(false);
+    expect(channelAllowed('/@other', youtube, siteRules)).toBe(false);
   });
 });
