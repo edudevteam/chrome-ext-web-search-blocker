@@ -45,6 +45,12 @@ Store). Nothing leaves your browser; see [PRIVACY.md](PRIVACY.md).
 - **Updates on demand.** _Check for updates_ asks the Web Store right away, and a
   downloaded update can be installed with one click.
 
+![Blocksy in whitelist mode: the new tab page shows a rotating phrase and shortcuts to the allowed sites, with the password-locked popup open](./readme-blocksy-whitelist-mode.png)
+
+_Whitelist mode in Brave. The new tab page shows a rotating phrase and cards for the
+allowed sites, including a single allowed YouTube channel (`@fundedyouth`). The popup
+is locked behind a password._
+
 ## Getting started
 
 1. [Install Blocksy](https://chromewebstore.google.com/detail/blocksy-block-filter-whit/hdlenebfpeejobkiacpglgeigoodolcn?hl=en-US&utm_source=ext_sidebar) and pin it to the toolbar.
